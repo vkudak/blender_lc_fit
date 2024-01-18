@@ -39,6 +39,7 @@ def read_config(conf_file):
             template_path = config.get('options', 'template_path')
             blender_path = config.get('options', 'blender_path')
 
+            ncpu = config.getint('mcmc_params', 'ncpu', fallback=1)
             niter_burn = config.getint('mcmc_params', 'niter_burn')
             niter = config.getint('mcmc_params', 'niter')
             nwalkers = config.getint('mcmc_params', 'nwalkers')
@@ -60,26 +61,14 @@ def read_config(conf_file):
             tle_line1 = config.get('blender_lc', 'tle_line1')
             tle_line2 = config.get('blender_lc', 'tle_line2')
 
-            # st_user = config.get('space_track', 'username')
-            # st_pass = config.get('space_track', 'password')
-
-            p_spin = config.getfloat('var_params', 'p_spin')
-            p_phase = config.getfloat('var_params', 'p_phase')
-            pr_period = config.getfloat('var_params', 'p_pr')
-            pr_phase = config.getfloat('var_params', 'pr_phase')
-            pr_angle = config.getfloat('var_params', 'pr_angle')
-
-            # min max step
-            p_spin_lim = json.loads(config.get('var_param_limits', 'p_spin'))
-            p_phase_lim = json.loads(config.get('var_param_limits', 'p_phase'))
-            pr_period_lim = json.loads(config.get('var_param_limits', 'p_pr'))
-            pr_phase_lim = json.loads(config.get('var_param_limits', 'pr_phase'))
-            pr_angle_lim = json.loads(config.get('var_param_limits', 'pr_angle'))
+            var_params = config.get('var_params', 'value')
+            var_params = json.loads(var_params)
 
             return {'temp_dir_name': temp_dir_name,
                     'template_path': template_path,
                     'blender_path': blender_path,
 
+                    'ncpu': ncpu,
                     'nwalkers': nwalkers,
                     'niter': niter,
                     'niter_burn': niter_burn,
@@ -97,21 +86,8 @@ def read_config(conf_file):
                     'frame_res': [fr_x, fr_y],
                     'tle_line1': tle_line1,
                     'tle_line2': tle_line2,
+                    'var_params_list': var_params
 
-                    # 'st_user': st_user,
-                    # 'st_pass': st_pass,
-
-                    'p_spin': p_spin,
-                    'p_phase': p_phase,
-                    'pr_period': pr_period,
-                    'pr_phase': pr_phase,
-                    'pr_angle': pr_angle,
-
-                    'p_spin_lim': p_spin_lim,
-                    'p_phase_lim': p_phase_lim,
-                    'pr_period_lim': pr_period_lim,
-                    'pr_phase_lim': pr_phase_lim,
-                    'pr_angle_lim': pr_angle_lim,
                     }
 
         except Exception as E:
@@ -247,7 +223,7 @@ def blender_render(blender_path, tmp_script_path, log_dir_path):
                         "--log-file", os.path.join(log_dir_path, 'blender_log.log')], 
                         stdout=file
                         )
-    # --log-level 0 for less details
+    # --log-level 0 for fewer details
     return res.returncode
 
 
@@ -380,7 +356,7 @@ def timestamp2dt(stamp_list):
     return [datetime.fromtimestamp(x) for x in stamp_list]
 
 
-def model_diff(synth_time, synth_mag, lc_time, lc_mag, norm_mag=True, save_plot=False, plot_title=None):
+def model_diff(synth_time, synth_mag, lc_time, lc_mag, conf_res, norm_mag=True, save_plot=False, plot_title=None):
     """
     Calculate difference between original LC and synthetic
     Interpolate with spline original LC and produce new one where time is same as in synthetic LC
@@ -389,6 +365,7 @@ def model_diff(synth_time, synth_mag, lc_time, lc_mag, norm_mag=True, save_plot=
         synth_mag: magnitudes of synth LC
         lc_time: datetime of observed LC
         lc_mag: magnitudes of observed LC
+        conf_res: config data
         norm_mag: norm magnitudes if True
         save_plot: False, Save plot if True
         plot_title: None, set plot title if needed (model parameters can be printed)
@@ -446,7 +423,7 @@ def model_diff(synth_time, synth_mag, lc_time, lc_mag, norm_mag=True, save_plot=
         else:
             fig.suptitle('Observed and synthetic LC', fontsize=14)
         fig.tight_layout()
-        plt.savefig("resid_" + name.replace(".", "_") + ".png")
+        plt.savefig(os.path.join(conf_res["temp_dir_name"], "resid_" + name.replace(".", "_") + ".png"))
 
     return lc_mag_new - synth_mag
 

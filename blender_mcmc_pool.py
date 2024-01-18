@@ -85,7 +85,7 @@ def model(var_params, conf_res, delete_tmp=True):
 def lnlike(var_params, lc_time, lc_mag, lc_mag_err, conf_res):
     synth_lc = model(var_params, conf_res)
 
-    m_diff = model_diff(synth_lc['time'], synth_lc['mst'], lc_time, lc_mag, norm_mag=False)
+    m_diff = model_diff(synth_lc['time'], synth_lc['mst'], lc_time, lc_mag, conf_res=conf_res, norm_mag=False)
 
     # return -0.5 * np.sum(((y - y_model) / yerr) ** 2)
 
@@ -98,14 +98,16 @@ def lnprior(var_params):
     # Find in OCFit !!!!
     p, p_phase, p_pr, p_pr_phase, pr_angle = var_params
     # if (5.0 < p < 15.0) and (0.0 <= p_phase < 359) and (0.0 <= p_pr < 500.0) and (0. <= p_pr_phase < 359) and (0. <= pr_angle < 60):
-    if (
-        (g_conf_res['p_spin_lim'][0] < p < g_conf_res['p_spin_lim'][1]) and \
-        (g_conf_res['p_phase_lim'][0] <= p_phase < g_conf_res['p_phase_lim'][1]) and \
-        (g_conf_res['pr_period_lim'][0] <= p_pr < g_conf_res['pr_period_lim'][1]) and \
-        (g_conf_res['pr_phase_lim'][0] <= p_pr_phase < g_conf_res['pr_phase_lim'][1]) and \
-        (g_conf_res['pr_angle_lim'][0] <= pr_angle < g_conf_res['pr_angle_lim'][1])):
-        return 0.0
-    return -np.inf
+
+    # if (
+    #     (g_conf_res['p_spin_lim'][0] < p < g_conf_res['p_spin_lim'][1]) and \
+    #     (g_conf_res['p_phase_lim'][0] <= p_phase < g_conf_res['p_phase_lim'][1]) and \
+    #     (g_conf_res['pr_period_lim'][0] <= p_pr < g_conf_res['pr_period_lim'][1]) and \
+    #     (g_conf_res['pr_phase_lim'][0] <= p_pr_phase < g_conf_res['pr_phase_lim'][1]) and \
+    #     (g_conf_res['pr_angle_lim'][0] <= pr_angle < g_conf_res['pr_angle_lim'][1])):
+    #     return 0.0
+    # return -np.inf
+    return 0.0
 
 
 def lnprob(var_params):
@@ -170,6 +172,10 @@ if __name__ == "__main__":
 
     conf_res = read_config(conf_file=config_name)
 
+    # print(var_params)
+    # print(type(var_params))
+    # sys.exit()
+
     conf_res['st_user'] = os.getenv('ST_USER', default='None')
     conf_res['st_pass'] = os.getenv('ST_PASS', default='None')
 
@@ -179,7 +185,10 @@ if __name__ == "__main__":
     lc_time, lc_mag, lc_mag_err = read_original_lc(obs_lc_path)
     obs_lc_data = [lc_time, lc_mag, lc_mag_err]
 
-    var_params = (conf_res['p_spin'], conf_res['p_phase'], conf_res['pr_period'], conf_res['pr_phase'], conf_res['pr_angle'])
+    var_params = (var['value'] for var in conf_res['var_params_list'])
+
+
+    # var_params = (conf_res['p_spin'], conf_res['p_phase'], conf_res['pr_period'], conf_res['pr_phase'], conf_res['pr_angle'])
 
     # params = (conf_res, var_params, lc_time, lc_mag, lc_mag_err)
 
@@ -187,7 +196,11 @@ if __name__ == "__main__":
     nwalkers = conf_res['nwalkers']  # 20  # 128
     niter = conf_res['niter']  # 100  # 500
     # initial = np.array([5.0, 1.0, 1.0, 26000., 41000.,100000.,-4.5])
-    initial = np.array(var_params)
+
+    # print(var_params)
+    # print(len(list(var_params)))
+    # sys.exit()
+    initial = np.array(list(var_params))
     ndim = len(initial)
 
     # p0 = [np.array(initial) + 1e-7 * np.random.randn(ndim) for i in range(nwalkers)]   #steps !!!!
@@ -197,14 +210,17 @@ if __name__ == "__main__":
     #         ......
     #         ] * nwalker times
 
-    p0 = [ 
-                        np.array([
-                        randrange_float(conf_res['p_spin_lim'][0], conf_res['p_spin_lim'][1], conf_res['p_spin_lim'][2]),
-                        randrange_float(conf_res['p_phase_lim'][0], conf_res['p_phase_lim'][1], conf_res['p_phase_lim'][2]),
-                        randrange_float(conf_res['pr_period_lim'][0], conf_res['pr_period_lim'][1], conf_res['pr_period_lim'][2]),
-                        randrange_float(conf_res['pr_phase_lim'][0], conf_res['pr_phase_lim'][1], conf_res['pr_phase_lim'][2]),
-                        randrange_float(conf_res['pr_angle_lim'][0], conf_res['pr_angle_lim'][1], conf_res['pr_angle_lim'][2])
-                        ])
+    # p0 = [
+    #                     np.array([
+    #                     randrange_float(conf_res['p_spin_lim'][0], conf_res['p_spin_lim'][1], conf_res['p_spin_lim'][2]),
+    #                     randrange_float(conf_res['p_phase_lim'][0], conf_res['p_phase_lim'][1], conf_res['p_phase_lim'][2]),
+    #                     randrange_float(conf_res['pr_period_lim'][0], conf_res['pr_period_lim'][1], conf_res['pr_period_lim'][2]),
+    #                     randrange_float(conf_res['pr_phase_lim'][0], conf_res['pr_phase_lim'][1], conf_res['pr_phase_lim'][2]),
+    #                     randrange_float(conf_res['pr_angle_lim'][0], conf_res['pr_angle_lim'][1], conf_res['pr_angle_lim'][2])
+    #                     ])
+
+    p0 = [
+        np.array([randrange_float(var['min_val'], var['max_val'], var['step']) for var in conf_res['var_params_list']])
         for i in range(nwalkers)
     ]
 
@@ -214,9 +230,7 @@ if __name__ == "__main__":
 
     start_time = time.time()
 
-    # sampler, pos, prob, state = run_mcmc_pool(p0, nwalkers, niter, ndim, lnprob, obs_lc_data=(lc_time, lc_mag, lc_mag_err, conf_res), ncpus=2)
-    sampler, pos, prob, state = run_mcmc_pool(p0, nwalkers, niter, ndim, lnprob, ncpus=2)
-    # sampler, pos, prob, state = run_mcmc(p0, nwalkers, niter, ndim, lnprob, obs_lc_data=(lc_time, lc_mag, lc_mag_err, conf_res))
+    sampler, pos, prob, state = run_mcmc_pool(p0, nwalkers, niter, ndim, lnprob, ncpus=conf_res['ncpu'])
     samples = sampler.flatchain
     print("Fitted parameters:")
     print(samples[np.argmax(sampler.flatlnprobability)])
@@ -227,15 +241,18 @@ if __name__ == "__main__":
     theta_max = samples[np.argmax(sampler.flatlnprobability)]
     best_synth_lc = model(theta_max, conf_res, delete_tmp=False)
 
-    m_diff = model_diff(best_synth_lc['time'], best_synth_lc['mst'], lc_time, lc_mag, norm_mag=False, save_plot=True, plot_title=theta_max)
+    m_diff = model_diff(best_synth_lc['time'], best_synth_lc['mst'], lc_time, lc_mag, norm_mag=False, save_plot=True,
+                        plot_title=theta_max, conf_res=conf_res)
 
     # plt.plot(age,T,label='Change in T')
     # plt.plot(age,best_fit_model,label='Highest Likelihood Model')
     # plt.show()
     # print 'Theta max: ',theta_max
 
+
     # Posterior Spread or Cornerplot
-    labels = ['P', 'p_phase', 'P_pr', 'pr_phase', 'pr_angle']
+    # labels = ['P', 'p_phase', 'P_pr', 'pr_phase', 'pr_angle']
+    labels = [var['name'] for var in var_params]
     fig = corner.corner(samples, show_titles=True, labels=labels, plot_datapoints=True, quantiles=[0.16, 0.5, 0.84])
     fig.tight_layout()
     plt.savefig(os.path.join(conf_res['temp_dir_name'], "cornr_plot.svg"))
