@@ -1,8 +1,9 @@
-import numpy as np
-import math
 import sys
 import os
+import math
+import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import dates as mpl_dates
 from datetime import datetime, timedelta
 import subprocess
 import configparser
@@ -59,8 +60,8 @@ def read_config(conf_file):
             tle_line1 = config.get('blender_lc', 'tle_line1')
             tle_line2 = config.get('blender_lc', 'tle_line2')
 
-            st_user = config.get('space_track', 'username')
-            st_pass = config.get('space_track', 'password')
+            # st_user = config.get('space_track', 'username')
+            # st_pass = config.get('space_track', 'password')
 
             p_spin = config.getfloat('var_params', 'p_spin')
             p_phase = config.getfloat('var_params', 'p_phase')
@@ -97,8 +98,8 @@ def read_config(conf_file):
                     'tle_line1': tle_line1,
                     'tle_line2': tle_line2,
 
-                    'st_user': st_user,
-                    'st_pass': st_pass,
+                    # 'st_user': st_user,
+                    # 'st_pass': st_pass,
 
                     'p_spin': p_spin,
                     'p_phase': p_phase,
@@ -188,8 +189,6 @@ def process_video(video_file_path, w=30):
         res["count"].append(count)
         res["flux"].append(gray_img.sum())
         # pbar.update(1)
-        if cv2.waitKey(10) & 0xFF == ord('q'):
-            break
         success, image = cap.read()
     # pbar.close()
     cap.release()
@@ -201,7 +200,7 @@ def process_video(video_file_path, w=30):
 # def make_blender_script(template_path, tmp_script_path, sat_model_path, output_dir, resolution, fps, sat_spin):
 def make_blender_script(tmp_script_path, conf_res, sat_spin, p_phase, p_pr, p_pr_phase, pr_angle):
     """
-    Prepeare Blender script from template and passed parameters
+    Prepare Blender script from template and passed parameters
     Args:
         tmp_script_path: temporary created script path
         conf_res: all data from config file
@@ -250,7 +249,6 @@ def blender_render(blender_path, tmp_script_path, log_dir_path):
                         )
     # --log-level 0 for less details
     return res.returncode
-
 
 
 def make_lc(N, flux, s_date, s_time, norad, fps, st_user, st_pass, location=[+48.63, 22.33, 180], A=16.4, plot=False):
@@ -345,7 +343,6 @@ def make_lc(N, flux, s_date, s_time, norad, fps, st_user, st_pass, location=[+48
 
         # plt.gcf().autofmt_xdate()
 
-        from matplotlib import dates as mpl_dates
         date_format = mpl_dates.DateFormatter('%H:%M:%S')
         plt.gca().xaxis.set_major_formatter(date_format)
 
@@ -385,7 +382,7 @@ def timestamp2dt(stamp_list):
 
 def model_diff(synth_time, synth_mag, lc_time, lc_mag, norm_mag=True, save_plot=False, plot_title=None):
     """
-    Calculate difference betwen original LC and synthetic
+    Calculate difference between original LC and synthetic
     Interpolate with spline original LC and produce new one where time is same as in synthetic LC
     Args:
         synth_time: datetime of synth LC

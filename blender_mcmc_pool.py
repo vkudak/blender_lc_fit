@@ -7,6 +7,7 @@ import platform
 import corner
 
 import emcee
+from dotenv import load_dotenv
 
 from blender_support import *
 
@@ -152,6 +153,7 @@ def run_mcmc_pool(p0, nwalkers, niter, ndim, lnprob, ncpus=cpu_count()):
 
 
 if __name__ == "__main__":
+    load_dotenv('.env')
     parser = argparse.ArgumentParser(description='LC simulation with MCMC method and Blender software')
     parser.add_argument('-c', '--config', help='Specify config file', required=False)
     parser.add_argument('-l', '--observed_lc', help="Path to observed LC", required=True)
@@ -167,6 +169,9 @@ if __name__ == "__main__":
         obs_lc_path = args["observed_lc"]
 
     conf_res = read_config(conf_file=config_name)
+
+    conf_res['st_user'] = os.getenv('ST_USER', default='None')
+    conf_res['st_pass'] = os.getenv('ST_PASS', default='None')
 
     # print(conf_res['p_spin_lim'][0])
     # sys.exit()
