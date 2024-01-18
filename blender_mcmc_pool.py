@@ -252,7 +252,8 @@ if __name__ == "__main__":
 
     # Posterior Spread or Cornerplot
     # labels = ['P', 'p_phase', 'P_pr', 'pr_phase', 'pr_angle']
-    labels = [var['name'] for var in var_params]
+    labels = [var['name'] for var in conf_res['var_params_list']]
+    # print(labels)
     fig = corner.corner(samples, show_titles=True, labels=labels, plot_datapoints=True, quantiles=[0.16, 0.5, 0.84])
     fig.tight_layout()
     plt.savefig(os.path.join(conf_res['temp_dir_name'], "cornr_plot.svg"))
