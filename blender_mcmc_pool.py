@@ -21,25 +21,22 @@ def model(var_params, conf_res, delete_tmp=True):
     Return:
         Synthetic LC, dict {'time': time, 'mst': mag, 'mr': mr, 'mz': mz, 'el': el, 'range': dist}
     """
-    p, p_phase, p_pr, p_pr_phase, pr_angle = var_params  # theta
+    # p, p_phase, p_pr, p_pr_phase, pr_angle = var_params  # theta
     # print("PHASE=", p_phase)
 
     temp_dir_name = conf_res["temp_dir_name"]  # "/home/vkudak/tmp"
     temp_dir_path = pathlib.Path(temp_dir_name)
     temp_dir_path.mkdir(parents=True, exist_ok=True)
 
-    tmp_script_path = os.path.join(temp_dir_name, "temp_blender_script_topex.py")
+    tmp_script_path = os.path.join(temp_dir_name, "temp_blender_script.py")
     # video_file = os.path.join(conf_res["temp_dir_name"], "rendered_file.mp4")
     rnd_gen = "_" + gen_random_str()
 
+    # var_params = (var['value'] for var in conf_res['var_params_list'])
+    # print("problem....")
     video_file = make_blender_script(tmp_script_path=tmp_script_path + rnd_gen,
-                                          conf_res=conf_res,
-                                          sat_spin=p,
-                                          p_phase=p_phase,
-                                          p_pr=p_pr,
-                                          p_pr_phase=p_pr_phase,
-                                          pr_angle=pr_angle
-                                          )
+                                     conf_res=conf_res, var_list=var_params #conf_res['var_params_list']
+                                     )
 
     if video_file is False:
         sys.exit()
@@ -111,6 +108,9 @@ def lnprior(var_params):
 
 
 def lnprob(var_params):
+    # print('lnprob params:')
+    # print(var_params)
+    # sys.exit()
 
     lc_time, lc_mag, lc_mag_err = g_data
 
@@ -140,11 +140,12 @@ def run_mcmc_pool(p0, nwalkers, niter, ndim, lnprob, ncpus=cpu_count()):
         backend = emcee.backends.HDFBackend(save_file)
         backend.reset(nwalkers, ndim)
 
-    with Pool(processes=ncpus, initializer=init_pool, initargs=(obs_lc_data, conf_res)) as pool:
+    with (Pool(processes=ncpus, initializer=init_pool, initargs=(obs_lc_data, conf_res)) as pool):
 
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, pool=pool, backend=backend)
 
         print("Running burn-in...")
+        # p0, _, _
         p0, _, _ = sampler.run_mcmc(p0, conf_res['niter_burn'], progress=True)  # 100
         sampler.reset()
 

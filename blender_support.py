@@ -174,36 +174,27 @@ def process_video(video_file_path, w=30):
 
 
 # def make_blender_script(template_path, tmp_script_path, sat_model_path, output_dir, resolution, fps, sat_spin):
-def make_blender_script(tmp_script_path, conf_res, sat_spin, p_phase, p_pr, p_pr_phase, pr_angle):
+def make_blender_script(tmp_script_path, conf_res, var_list):
     """
     Prepare Blender script from template and passed parameters
     Args:
         tmp_script_path: temporary created script path
         conf_res: all data from config file
-        sat_spin: satellite spin rate
-        p_phase:
-        p_pr:
-        p_pr_phase:
-        pr_angle:
+        var_list: list of variable parameters [{"name:spin", "value":5, "min_val:3", 'max_val':6}, {}, {}]
     Return:
         True or False. Script saved in entered path dir.
     """
     try:
-
         with open(conf_res['template_path'], mode="r") as file:
             script_template = Template(file.read())
 
+        # print("point 1")
         with open(tmp_script_path, mode="w") as fp:
             video_file_full_path = os.path.join(conf_res['temp_dir_name'], "rendered_file_" + gen_random_str() + ".mp4")
-            # video_file_full_path = os.path.normpath(video_file_full_path)
-            # video_file_full_path  = conf_res['temp_dir_name'] + os.sep + "rendered_file_" + gen_random_str() + ".mp4"
+
             rendered_script = script_template.render(
                 conf_res=conf_res,
-                sat_spin=sat_spin,
-                p_phase=p_phase,
-                p_prec=p_pr,
-                p_pr_phase=float(p_pr_phase),
-                pr_angle=pr_angle,
+                var_list=var_list,
                 rendered_videofile_name=video_file_full_path
             )
 
