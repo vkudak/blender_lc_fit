@@ -423,6 +423,12 @@ def randrange_float(start, stop, step):
     """
     usage:
         randrange_float(2.1, 4.2, 0.3) # returns 2.4
+    Args:
+        start: min value
+        stop: max value
+        step: step size
+    Return:
+        float: random in given range of values
     """
     return random.randint(0, int((stop - start) / step)) * step + start
 

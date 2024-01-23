@@ -21,8 +21,22 @@ def model(var_params, conf_res, delete_tmp=True):
     Return:
         Synthetic LC, dict {'time': time, 'mst': mag, 'mr': mr, 'mz': mz, 'el': el, 'range': dist}
     """
-    # p, p_phase, p_pr, p_pr_phase, pr_angle = var_params  # theta
-    # print("PHASE=", p_phase)
+    # Write params in file ####################
+
+    fv_filename = os.path.join(conf_res['temp_dir_name'], "var_params.txt")
+    if os.path.exists(fv_filename):
+        fv_mode = 'a'  # append if already exists
+    else:
+        fv_mode = 'w'  # make a new file if not
+
+    with open(fv_filename, fv_mode) as fv:
+        # np.savetxt(fv, var_params, fmt='%10.2f',
+        #            header = "     P      P_phase      P_pr     Pr_phase    Pr_angle ")
+        list = np.array(var_params)
+        list.tofile(fv, format='%10.2f', sep=" ")
+        fv.write("\n")
+
+    ########################################################
 
     temp_dir_name = conf_res["temp_dir_name"]  # "/home/vkudak/tmp"
     temp_dir_path = pathlib.Path(temp_dir_name)
@@ -80,6 +94,7 @@ def model(var_params, conf_res, delete_tmp=True):
 
 
 def lnlike(var_params, lc_time, lc_mag, lc_mag_err, conf_res):
+
     synth_lc = model(var_params, conf_res)
 
     m_diff = model_diff(synth_lc['time'], synth_lc['mst'], lc_time, lc_mag, conf_res=conf_res, norm_mag=False)
@@ -92,8 +107,16 @@ def lnlike(var_params, lc_time, lc_mag, lc_mag_err, conf_res):
 
 
 def lnprior(var_params):
-    # Find in OCFit !!!!
-    p, p_phase, p_pr, p_pr_phase, pr_angle = var_params
+    # var_params =  [  40.39547474  229.66830222 1834.72259637  149.58446112   24.92478567]
+
+    for i, param in enumerate(var_params):
+        # print(i, ",", param)
+        g_par = g_conf_res['var_params_list'][i]
+        if g_par['min_val'] > param or param > g_par['max_val']:
+            return -np.inf
+    return 0.0
+
+    # p, p_phase, p_pr, p_pr_phase, pr_angle = var_params
     # if (5.0 < p < 15.0) and (0.0 <= p_phase < 359) and (0.0 <= p_pr < 500.0) and (0. <= p_pr_phase < 359) and (0. <= pr_angle < 60):
 
     # if (
@@ -220,10 +243,17 @@ if __name__ == "__main__":
     #                     randrange_float(conf_res['pr_angle_lim'][0], conf_res['pr_angle_lim'][1], conf_res['pr_angle_lim'][2])
     #                     ])
 
+    # Initial parameters for each walker
     p0 = [
         np.array([randrange_float(var['min_val'], var['max_val'], var['step']) for var in conf_res['var_params_list']])
         for i in range(nwalkers)
     ]
+
+    np.savetxt(os.path.join(conf_res['temp_dir_name'], "p0.txt"), p0, fmt='%10.2f',
+               header="     P      P_phase      P_pr     Pr_phase    Pr_angle ")
+
+    # print(conf_res['var_params_list'])
+
 
     # print(np.shape(p0))
     # print(np.shape(p2))
