@@ -7,7 +7,7 @@ import corner
 # plt.rcParams["font.family"] = "sans-serif"
 # plt.rcParams["font.sans-serif"] = ["Computer Modern Sans"]
 plt.rcParams["text.usetex"] = True
-plt.rcParams["backend"] = "ps" #'TkAgg'
+# plt.rcParams["backend"] = "ps" #'TkAgg'
 
 filename = sys.argv[1]
 
@@ -22,4 +22,5 @@ samples = reader.get_chain(flat=True)#discard=burnin, flat=True, thin=thin)
 labels = [r'P', r'$P_{phase}$', r'$P_{pr}$', r'$Pr_{phase}$', r'$Pr_{angle}$']
 fig = corner.corner(samples, show_titles=True, labels=labels, plot_datapoints=True, quantiles=[0.16, 0.5, 0.84])
 # fig.savefig(os.path.join(conf_res['temp_dir_name'], "cornr_plot.svg"))
-plt.show()
+fig.savefig(filename + ".svg")
+# plt.show()
