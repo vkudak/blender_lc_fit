@@ -23,18 +23,18 @@ def model(var_params, conf_res, delete_tmp=True):
     """
     # Write params in file ####################
 
-    fv_filename = os.path.join(conf_res['temp_dir_name'], "var_params.txt")
-    if os.path.exists(fv_filename):
-        fv_mode = 'a'  # append if already exists
-    else:
-        fv_mode = 'w'  # make a new file if not
-
-    with open(fv_filename, fv_mode) as fv:
-        # np.savetxt(fv, var_params, fmt='%10.2f',
-        #            header = "     P      P_phase      P_pr     Pr_phase    Pr_angle ")
-        list = np.array(var_params)
-        list.tofile(fv, format='%10.2f', sep=" ")
-        fv.write("\n")
+    # fv_filename = os.path.join(conf_res['temp_dir_name'], "var_params.txt")
+    # if os.path.exists(fv_filename):
+    #     fv_mode = 'a'  # append if already exists
+    # else:
+    #     fv_mode = 'w'  # make a new file if not
+    #
+    # with open(fv_filename, fv_mode) as fv:
+    #     # np.savetxt(fv, var_params, fmt='%10.2f',
+    #     #            header = "     P      P_phase      P_pr     Pr_phase    Pr_angle ")
+    #     list = np.array(var_params)
+    #     list.tofile(fv, format='%10.2f', sep=" ")
+    #     fv.write("\n")
 
     ########################################################
 
@@ -99,6 +99,22 @@ def lnlike(var_params, lc_time, lc_mag, lc_mag_err, conf_res):
 
     m_diff = model_diff(synth_lc['time'], synth_lc['mst'], lc_time, lc_mag, conf_res=conf_res, norm_mag=False)
 
+    ##########################################################
+    # Write var_param.txt file with all parameters and Residual
+    fv_filename = os.path.join(conf_res['temp_dir_name'], "var_params.txt")
+    with open(fv_filename, "a") as fv:
+        # print(m_diff)
+        list = np.append(np.array(var_params), -0.5 * np.sum((m_diff / 1.0) ** 2))
+        # print(list, len(list))
+        # print('%10.2f ' * len(list) + '\n')
+        # list.tofile(fv, format='%10.2f ' * len(list) + '\n', sep=" ")
+        # fv.write("\n")
+        np.savetxt(fv, list, fmt='%10.2f', delimiter=" ", newline=" ",
+                   header="     P      P_phase      P_pr     Pr_phase    Pr_angle    resid ")
+        fv.write("\n")
+    ###############################################################
+
+
     # return -0.5 * np.sum(((y - y_model) / yerr) ** 2)
 
     # ll = conf_res['lc_duration'] * conf_res['fps']
@@ -127,7 +143,7 @@ def lnprior(var_params):
     #     (g_conf_res['pr_angle_lim'][0] <= pr_angle < g_conf_res['pr_angle_lim'][1])):
     #     return 0.0
     # return -np.inf
-    return 0.0
+    # return 0.0
 
 
 def lnprob(var_params):
@@ -252,7 +268,9 @@ if __name__ == "__main__":
     np.savetxt(os.path.join(conf_res['temp_dir_name'], "p0.txt"), p0, fmt='%10.2f',
                header="     P      P_phase      P_pr     Pr_phase    Pr_angle ")
 
-    # print(conf_res['var_params_list'])
+    fv_filename = os.path.join(conf_res['temp_dir_name'], "var_params.txt")
+    f = open(fv_filename, "w")
+    f.close()
 
 
     # print(np.shape(p0))
