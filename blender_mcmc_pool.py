@@ -109,8 +109,7 @@ def lnlike(var_params, lc_time, lc_mag, lc_mag_err, conf_res):
         # print('%10.2f ' * len(list) + '\n')
         # list.tofile(fv, format='%10.2f ' * len(list) + '\n', sep=" ")
         # fv.write("\n")
-        np.savetxt(fv, list, fmt='%10.2f', delimiter=" ", newline=" ",
-                   header="     P      P_phase      P_pr     Pr_phase    Pr_angle    resid ")
+        np.savetxt(fv, list, fmt='%10.2f', delimiter=" ", newline=" ")
         fv.write("\n")
     ###############################################################
 
@@ -185,7 +184,7 @@ def run_mcmc_pool(p0, nwalkers, niter, ndim, lnprob, ncpus=cpu_count()):
 
         print("Running burn-in...")
         # p0, _, _
-        p0, _, _ = sampler.run_mcmc(p0, conf_res['niter_burn'], progress=True)  # 100
+        p0 = sampler.run_mcmc(p0, conf_res['niter_burn'], progress=True)  # 100
         sampler.reset()
 
         print("Running production...")
@@ -270,6 +269,7 @@ if __name__ == "__main__":
 
     fv_filename = os.path.join(conf_res['temp_dir_name'], "var_params.txt")
     f = open(fv_filename, "w")
+    f.write("       P      P_phase      P_pr     Pr_phase    Pr_angle    resid \n")
     f.close()
 
 
@@ -278,6 +278,14 @@ if __name__ == "__main__":
     # sys.exit()
 
     start_time = time.time()
+
+    # my_moves = [
+    #     ([randrange_float(var['min_val'], var['max_val'], var['step']) for var in conf_res['var_params_list']], 1.0)
+    #     for i in range(niter*nwalkers)
+    # ]
+
+    # print(my_moves, file=open('moves.txt', 'w'))
+    # sys.exit()
 
     sampler, pos, prob, state = run_mcmc_pool(p0, nwalkers, niter, ndim, lnprob, ncpus=conf_res['ncpu'])
     samples = sampler.flatchain
