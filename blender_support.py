@@ -64,6 +64,9 @@ def read_config(conf_file):
             var_params = config.get('var_params', 'value')
             var_params = json.loads(var_params)
 
+            fixed_params = config.get('fixed_params', 'value')
+            fixed_params = json.loads(fixed_params)
+
             return {'temp_dir_name': temp_dir_name,
                     'template_path': template_path,
                     'blender_path': blender_path,
@@ -86,7 +89,8 @@ def read_config(conf_file):
                     'frame_res': [fr_x, fr_y],
                     'tle_line1': tle_line1,
                     'tle_line2': tle_line2,
-                    'var_params_list': var_params
+                    'var_params_list': var_params,
+                    'fix_params_list': fixed_params,
 
                     }
 
@@ -382,7 +386,8 @@ def model_diff(synth_time, synth_mag, lc_time, lc_mag, conf_res, norm_mag=True, 
         lc_mag_norm = minmax_scale(-1 * lc_mag, feature_range=(0, 1))
         synth_mag_norm = minmax_scale(-1 * synth_mag, feature_range=(0, 1))
         lc_data = {'time': lc_time, "mag": lc_mag, "timestamp": dt2timestamp(lc_time), "norm_mag": lc_mag_norm}
-        synth_data = {'time': synth_time, "mag": synth_mag, "timestamp": dt2timestamp(synth_time), "norm_mag": synth_mag_norm}
+        synth_data = {'time': synth_time, "mag": synth_mag, "timestamp": dt2timestamp(synth_time),
+                      "norm_mag": synth_mag_norm}
         spl = make_interp_spline(lc_data['timestamp'], lc_data['norm_mag'])  # , bc_type="natural")
         lc_mag_new = spl(synth_data['timestamp']).T
 

@@ -97,7 +97,8 @@ def lnlike(var_params, lc_time, lc_mag, lc_mag_err, conf_res):
 
     synth_lc = model(var_params, conf_res)
 
-    m_diff = model_diff(synth_lc['time'], synth_lc['mst'], lc_time, lc_mag, conf_res=conf_res, norm_mag=False)
+    # m_diff = model_diff(synth_lc['time'], synth_lc['mst'], lc_time, lc_mag, conf_res=conf_res, norm_mag=False)
+    m_diff = model_diff(synth_lc['time'], synth_lc['mst'], lc_time, lc_mag, conf_res=conf_res, norm_mag=True)
 
     ##########################################################
     # Write var_param.txt file with all parameters and Residual
@@ -219,6 +220,9 @@ if __name__ == "__main__":
     conf_res['st_pass'] = os.getenv('ST_PASS', default='None')
 
     # print(conf_res['p_spin_lim'][0])
+    # f_list = conf_res['fix_params_list']
+    # p_spin = [var['value'] for var in f_list if var["name"] == "p_spin"][0]
+    # print(p_spin)
     # sys.exit()
 
     lc_time, lc_mag, lc_mag_err = read_original_lc(obs_lc_path)
@@ -264,12 +268,13 @@ if __name__ == "__main__":
         for i in range(nwalkers)
     ]
 
+    # TODO: write data header from config
     np.savetxt(os.path.join(conf_res['temp_dir_name'], "p0.txt"), p0, fmt='%10.2f',
-               header="     P      P_phase      P_pr     Pr_phase    Pr_angle ")
+               header="     P_phase      P_pr     Pr_phase    Pr_angle ")
 
     fv_filename = os.path.join(conf_res['temp_dir_name'], "var_params.txt")
     f = open(fv_filename, "w")
-    f.write("       P      P_phase      P_pr     Pr_phase    Pr_angle    resid \n")
+    f.write("       P_phase      P_pr     Pr_phase    Pr_angle    resid \n")
     f.close()
 
 
