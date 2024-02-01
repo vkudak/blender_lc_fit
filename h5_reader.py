@@ -19,8 +19,13 @@ reader = emcee.backends.HDFBackend(filename)
 # thin = int(0.5 * np.min(tau))
 samples = reader.get_chain(flat=True)#discard=burnin, flat=True, thin=thin)
 
+# tau = reader.get_autocorr_time()
+# print(tau)
+
 labels = [r'P', r'$P_{phase}$', r'$P_{pr}$', r'$Pr_{phase}$', r'$Pr_{angle}$']
 fig = corner.corner(samples, show_titles=True, labels=labels, plot_datapoints=True, quantiles=[0.16, 0.5, 0.84])
 # fig.savefig(os.path.join(conf_res['temp_dir_name'], "cornr_plot.svg"))
+
 fig.savefig(filename + ".svg")
+
 # plt.show()
