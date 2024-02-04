@@ -8,6 +8,7 @@ import corner
 
 import emcee
 from dotenv import load_dotenv
+from dime_sampler import DIMEMove
 
 from blender_support import *
 
@@ -181,7 +182,7 @@ def run_mcmc_pool(p0, nwalkers, niter, ndim, lnprob, ncpus=cpu_count()):
 
     with (Pool(processes=ncpus, initializer=init_pool, initargs=(obs_lc_data, conf_res)) as pool):
 
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, pool=pool, backend=backend)
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, pool=pool, backend=backend, moves=DIMEMove())
 
         print("Running burn-in...")
         # p0, _, _
