@@ -39,4 +39,4 @@ if __name__ == '__main__':
                        )
     # Plot in tmp dir from config file
     model_diff(synth_lc['time'], synth_lc['mst'], lc_time, lc_mag,
-               norm_mag=False, save_plot=True, plot_title='Residuals', conf_res=conf_res)
+               norm_mag=True, save_plot=True, plot_title='Residuals', conf_res=conf_res, norm_range=(0, 5))

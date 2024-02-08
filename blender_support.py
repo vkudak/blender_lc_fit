@@ -351,7 +351,8 @@ def timestamp2dt(stamp_list):
     return [datetime.fromtimestamp(x) for x in stamp_list]
 
 
-def model_diff(synth_time, synth_mag, lc_time, lc_mag, conf_res, norm_mag=True, save_plot=False, plot_title=None):
+def model_diff(synth_time, synth_mag, lc_time, lc_mag, conf_res, norm_mag=True,
+               save_plot=False, plot_title=None, norm_range=(0, 1)):
     """
     Calculate difference between original LC and synthetic
     Interpolate with spline original LC and produce new one where time is same as in synthetic LC
@@ -364,27 +365,30 @@ def model_diff(synth_time, synth_mag, lc_time, lc_mag, conf_res, norm_mag=True, 
         norm_mag: norm magnitudes if True
         save_plot: False, Save plot if True
         plot_title: None, set plot title if needed (model parameters can be printed)
+        norm_range: tuple, Normalisation in range. Default (0, 1)
     Return:
         Array of mags (lc_mag - synth_mag)
     """
 
     if norm_mag:
-        lc_mag_norm = minmax_scale(-1 * lc_mag, feature_range=(0, 1))
-        synth_mag_norm = minmax_scale(-1 * synth_mag, feature_range=(0, 1))
+        lc_mag_norm = minmax_scale(-1 * lc_mag, feature_range=norm_range)
+        synth_mag_norm = minmax_scale(-1 * synth_mag, feature_range=norm_range)
         lc_data = {'time': lc_time, "mag": lc_mag, "timestamp": dt2timestamp(lc_time), "norm_mag": lc_mag_norm}
         synth_data = {'time': synth_time, "mag": synth_mag, "timestamp": dt2timestamp(synth_time), "norm_mag": synth_mag_norm}
         spl = make_interp_spline(lc_data['timestamp'], lc_data['norm_mag'])  # , bc_type="natural")
         lc_mag_new = spl(synth_data['timestamp']).T
+        mdif = lc_mag_new - synth_data['norm_mag']
     else:
         lc_data = {'time': lc_time, "mag": lc_mag, "timestamp": dt2timestamp(lc_time)}
         synth_data = {'time': synth_time, "mag": synth_mag, "timestamp": dt2timestamp(synth_time)}
         spl = make_interp_spline(lc_data['timestamp'], lc_data['mag'])  # , bc_type="natural")
         lc_mag_new = spl(synth_data['timestamp']).T
+        mdif = lc_mag_new - synth_data['mag']
 
     if save_plot:
         # norm data even if norm_mag=False
-        lc_mag_norm = minmax_scale(-1 * lc_mag, feature_range=(0, 1))
-        synth_mag_norm = minmax_scale(-1 * synth_mag, feature_range=(0, 1))
+        lc_mag_norm = minmax_scale(-1 * lc_mag, feature_range=norm_range)
+        synth_mag_norm = minmax_scale(-1 * synth_mag, feature_range=norm_range)
         lc_data = {'time': lc_time, "mag": lc_mag, "timestamp": dt2timestamp(lc_time), "norm_mag": lc_mag_norm}
         synth_data = {'time': synth_time, "mag": synth_mag, "timestamp": dt2timestamp(synth_time),
                       "norm_mag": synth_mag_norm}
@@ -410,7 +414,13 @@ def model_diff(synth_time, synth_mag, lc_time, lc_mag, conf_res, norm_mag=True, 
         ax2.plot(x, y, linestyle='dotted', color='red')
         ax2.legend()
 
-        mdif = lc_mag_new - synth_mag
+        # mdif = lc_mag_new - synth_data['norm_mag']
+
+        # f = open("temp.txt", "w")
+        # for x,y in zip(lc_mag_new, synth_data['norm_mag']):
+        #     f.write(f"{x:.3f}   {y:.3f}\n")
+        # f.close()
+
         name = -0.5 * np.sum((mdif / 1.0) ** 2)  # name will be -0.5*(y-y_model)^2
         name = str(name)
 
@@ -421,7 +431,7 @@ def model_diff(synth_time, synth_mag, lc_time, lc_mag, conf_res, norm_mag=True, 
         fig.tight_layout()
         plt.savefig(os.path.join(conf_res["temp_dir_name"], "resid_" + name.replace(".", "_") + ".png"))
 
-    return lc_mag_new - synth_mag
+    return mdif
 
 
 def randrange_float(start, stop, step):

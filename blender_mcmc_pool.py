@@ -99,7 +99,8 @@ def lnlike(var_params, lc_time, lc_mag, lc_mag_err, conf_res):
     synth_lc = model(var_params, conf_res)
 
     # m_diff = model_diff(synth_lc['time'], synth_lc['mst'], lc_time, lc_mag, conf_res=conf_res, norm_mag=False)
-    m_diff = model_diff(synth_lc['time'], synth_lc['mst'], lc_time, lc_mag, conf_res=conf_res, norm_mag=True)
+    m_diff = model_diff(synth_lc['time'], synth_lc['mst'], lc_time, lc_mag, conf_res=conf_res,
+                        norm_mag=True, norm_range=(0, 5))
 
     ##########################################################
     # Write var_param.txt file with all parameters and Residual
@@ -304,8 +305,8 @@ if __name__ == "__main__":
     theta_max = samples[np.argmax(sampler.flatlnprobability)]
     best_synth_lc = model(theta_max, conf_res, delete_tmp=False)
 
-    m_diff = model_diff(best_synth_lc['time'], best_synth_lc['mst'], lc_time, lc_mag, norm_mag=False, save_plot=True,
-                        plot_title=theta_max, conf_res=conf_res)
+    m_diff = model_diff(best_synth_lc['time'], best_synth_lc['mst'], lc_time, lc_mag, norm_mag=True, save_plot=True,
+                        plot_title=theta_max, conf_res=conf_res, norm_range=(0, 5))
 
     # plt.plot(age,T,label='Change in T')
     # plt.plot(age,best_fit_model,label='Highest Likelihood Model')
