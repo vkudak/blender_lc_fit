@@ -428,6 +428,12 @@ def model_diff(synth_time, synth_mag, lc_time, lc_mag, conf_res, norm_mag=True,
             fig.suptitle(plot_title, fontsize=14)
         else:
             fig.suptitle('Observed and synthetic LC', fontsize=14)
+
+        # Plot axis labels
+        ax1.set_ylabel("Normalised Flux")
+        ax2.set_ylabel("Residuals")
+        ax2.set_xlabel("Time (UT)")
+
         fig.tight_layout()
         plt.savefig(os.path.join(conf_res["temp_dir_name"], "resid_" + name.replace(".", "_") + ".png"))
 

@@ -22,23 +22,6 @@ def model(var_params, conf_res, delete_tmp=True):
     Return:
         Synthetic LC, dict {'time': time, 'mst': mag, 'mr': mr, 'mz': mz, 'el': el, 'range': dist}
     """
-    # Write params in file ####################
-
-    # fv_filename = os.path.join(conf_res['temp_dir_name'], "var_params.txt")
-    # if os.path.exists(fv_filename):
-    #     fv_mode = 'a'  # append if already exists
-    # else:
-    #     fv_mode = 'w'  # make a new file if not
-    #
-    # with open(fv_filename, fv_mode) as fv:
-    #     # np.savetxt(fv, var_params, fmt='%10.2f',
-    #     #            header = "     P      P_phase      P_pr     Pr_phase    Pr_angle ")
-    #     list = np.array(var_params)
-    #     list.tofile(fv, format='%10.2f', sep=" ")
-    #     fv.write("\n")
-
-    ########################################################
-
     temp_dir_name = conf_res["temp_dir_name"]  # "/home/vkudak/tmp"
     temp_dir_path = pathlib.Path(temp_dir_name)
     temp_dir_path.mkdir(parents=True, exist_ok=True)
@@ -95,9 +78,7 @@ def model(var_params, conf_res, delete_tmp=True):
 
 
 def lnlike(var_params, lc_time, lc_mag, lc_mag_err, conf_res):
-
     synth_lc = model(var_params, conf_res)
-
     # m_diff = model_diff(synth_lc['time'], synth_lc['mst'], lc_time, lc_mag, conf_res=conf_res, norm_mag=False)
     m_diff = model_diff(synth_lc['time'], synth_lc['mst'], lc_time, lc_mag, conf_res=conf_res,
                         norm_mag=True, norm_range=(0, 5))
@@ -106,13 +87,8 @@ def lnlike(var_params, lc_time, lc_mag, lc_mag_err, conf_res):
     # Write var_param.txt file with all parameters and Residual
     fv_filename = os.path.join(conf_res['temp_dir_name'], "var_params.txt")
     with open(fv_filename, "a") as fv:
-        # print(m_diff)
-        list = np.append(np.array(var_params), -0.5 * np.sum((m_diff / 1.0) ** 2))
-        # print(list, len(list))
-        # print('%10.2f ' * len(list) + '\n')
-        # list.tofile(fv, format='%10.2f ' * len(list) + '\n', sep=" ")
-        # fv.write("\n")
-        np.savetxt(fv, list, fmt='%10.2f', delimiter=" ", newline=" ")
+        mlist = np.append(np.array(var_params), -0.5 * np.sum((m_diff / 1.0) ** 2))
+        np.savetxt(fv, mlist, fmt='%10.2f', delimiter=" ", newline=" ")
         fv.write("\n")
     ###############################################################
 
@@ -126,26 +102,12 @@ def lnlike(var_params, lc_time, lc_mag, lc_mag_err, conf_res):
 
 def lnprior(var_params):
     # var_params =  [  40.39547474  229.66830222 1834.72259637  149.58446112   24.92478567]
-
     for i, param in enumerate(var_params):
         # print(i, ",", param)
         g_par = g_conf_res['var_params_list'][i]
         if g_par['min_val'] > param or param > g_par['max_val']:
             return -np.inf
     return 0.0
-
-    # p, p_phase, p_pr, p_pr_phase, pr_angle = var_params
-    # if (5.0 < p < 15.0) and (0.0 <= p_phase < 359) and (0.0 <= p_pr < 500.0) and (0. <= p_pr_phase < 359) and (0. <= pr_angle < 60):
-
-    # if (
-    #     (g_conf_res['p_spin_lim'][0] < p < g_conf_res['p_spin_lim'][1]) and \
-    #     (g_conf_res['p_phase_lim'][0] <= p_phase < g_conf_res['p_phase_lim'][1]) and \
-    #     (g_conf_res['pr_period_lim'][0] <= p_pr < g_conf_res['pr_period_lim'][1]) and \
-    #     (g_conf_res['pr_phase_lim'][0] <= p_pr_phase < g_conf_res['pr_phase_lim'][1]) and \
-    #     (g_conf_res['pr_angle_lim'][0] <= pr_angle < g_conf_res['pr_angle_lim'][1])):
-    #     return 0.0
-    # return -np.inf
-    # return 0.0
 
 
 def lnprob(var_params):
@@ -214,55 +176,21 @@ if __name__ == "__main__":
 
     conf_res = read_config(conf_file=config_name)
 
-    # print(var_params)
-    # print(type(var_params))
-    # sys.exit()
-
     conf_res['st_user'] = os.getenv('ST_USER', default='None')
     conf_res['st_pass'] = os.getenv('ST_PASS', default='None')
-
-    # print(conf_res['p_spin_lim'][0])
-    # f_list = conf_res['fix_params_list']
-    # p_spin = [var['value'] for var in f_list if var["name"] == "p_spin"][0]
-    # print(p_spin)
-    # sys.exit()
 
     lc_time, lc_mag, lc_mag_err = read_original_lc(obs_lc_path)
     obs_lc_data = [lc_time, lc_mag, lc_mag_err]
 
     var_params = (var['value'] for var in conf_res['var_params_list'])
 
-
-    # var_params = (conf_res['p_spin'], conf_res['p_phase'], conf_res['pr_period'], conf_res['pr_phase'], conf_res['pr_angle'])
-
-    # params = (conf_res, var_params, lc_time, lc_mag, lc_mag_err)
-
     # From example..... https://prappleizer.github.io/Tutorials/MCMC/MCMC_Tutorial.html
     nwalkers = conf_res['nwalkers']  # 20  # 128
     niter = conf_res['niter']  # 100  # 500
     # initial = np.array([5.0, 1.0, 1.0, 26000., 41000.,100000.,-4.5])
 
-    # print(var_params)
-    # print(len(list(var_params)))
-    # sys.exit()
     initial = np.array(list(var_params))
     ndim = len(initial)
-
-    # p0 = [np.array(initial) + 1e-7 * np.random.randn(ndim) for i in range(nwalkers)]   #steps !!!!
-
-    # p0 = [randrange_float(p_min, p_max, p_step),
-    #         randrange_float(p_phase_min, p_phase_max, p_phase_step),
-    #         ......
-    #         ] * nwalker times
-
-    # p0 = [
-    #                     np.array([
-    #                     randrange_float(conf_res['p_spin_lim'][0], conf_res['p_spin_lim'][1], conf_res['p_spin_lim'][2]),
-    #                     randrange_float(conf_res['p_phase_lim'][0], conf_res['p_phase_lim'][1], conf_res['p_phase_lim'][2]),
-    #                     randrange_float(conf_res['pr_period_lim'][0], conf_res['pr_period_lim'][1], conf_res['pr_period_lim'][2]),
-    #                     randrange_float(conf_res['pr_phase_lim'][0], conf_res['pr_phase_lim'][1], conf_res['pr_phase_lim'][2]),
-    #                     randrange_float(conf_res['pr_angle_lim'][0], conf_res['pr_angle_lim'][1], conf_res['pr_angle_lim'][2])
-    #                     ])
 
     # Initial parameters for each walker
     p0 = [
@@ -270,29 +198,16 @@ if __name__ == "__main__":
         for i in range(nwalkers)
     ]
 
-    # TODO: write data header from config
-    np.savetxt(os.path.join(conf_res['temp_dir_name'], "p0.txt"), p0, fmt='%10.2f',
-               header="     P_phase      P_pr     Pr_phase    Pr_angle ")
+    labels = [var['name'] for var in conf_res['var_params_list']]
+    
+    np.savetxt(os.path.join(conf_res['temp_dir_name'], "p0.txt"), p0, fmt='%10.2f', header="    ".join(labels))
 
     fv_filename = os.path.join(conf_res['temp_dir_name'], "var_params.txt")
     f = open(fv_filename, "w")
-    f.write("       P_phase      P_pr     Pr_phase    Pr_angle    resid \n")
+    f.write("   " + "    ".join(labels) + "    resid\n")
     f.close()
 
-
-    # print(np.shape(p0))
-    # print(np.shape(p2))
-    # sys.exit()
-
     start_time = time.time()
-
-    # my_moves = [
-    #     ([randrange_float(var['min_val'], var['max_val'], var['step']) for var in conf_res['var_params_list']], 1.0)
-    #     for i in range(niter*nwalkers)
-    # ]
-
-    # print(my_moves, file=open('moves.txt', 'w'))
-    # sys.exit()
 
     sampler, pos, prob, state = run_mcmc_pool(p0, nwalkers, niter, ndim, lnprob, ncpus=conf_res['ncpu'])
     samples = sampler.flatchain
@@ -306,18 +221,10 @@ if __name__ == "__main__":
     best_synth_lc = model(theta_max, conf_res, delete_tmp=False)
 
     m_diff = model_diff(best_synth_lc['time'], best_synth_lc['mst'], lc_time, lc_mag, norm_mag=True, save_plot=True,
-                        plot_title=theta_max, conf_res=conf_res, norm_range=(0, 5))
-
-    # plt.plot(age,T,label='Change in T')
-    # plt.plot(age,best_fit_model,label='Highest Likelihood Model')
-    # plt.show()
-    # print 'Theta max: ',theta_max
-
+                        plot_title=theta_max, conf_res=conf_res, norm_range=(0, 1))
 
     # Posterior Spread or Cornerplot
     # labels = ['P', 'p_phase', 'P_pr', 'pr_phase', 'pr_angle']
-    labels = [var['name'] for var in conf_res['var_params_list']]
-    # print(labels)
     fig = corner.corner(samples, show_titles=True, labels=labels, plot_datapoints=True, quantiles=[0.16, 0.5, 0.84])
     fig.tight_layout()
-    plt.savefig(os.path.join(conf_res['temp_dir_name'], "cornr_plot.svg"))
+    plt.savefig(os.path.join(conf_res['temp_dir_name'], "corner_plot.svg"))
