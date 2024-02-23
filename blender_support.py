@@ -371,13 +371,27 @@ def model_diff(synth_time, synth_mag, lc_time, lc_mag, conf_res, norm_mag=True,
     """
 
     if norm_mag:
+        # lc_mag_norm = minmax_scale(-1 * lc_mag, feature_range=norm_range)
+        # synth_mag_norm = minmax_scale(-1 * synth_mag, feature_range=norm_range)
+
+        # lc_data = {'time': lc_time, "mag": lc_mag, "timestamp": dt2timestamp(lc_time), "norm_mag": lc_mag_norm}
+        # synth_data = {'time': synth_time, "mag": synth_mag, "timestamp": dt2timestamp(synth_time), "norm_mag": synth_mag_norm}
+        # spl = make_interp_spline(lc_data['timestamp'], lc_data['norm_mag'])  # , bc_type="natural")
+        # lc_mag_new = spl(synth_data['timestamp']).T
+        # mdif = lc_mag_new - synth_data['norm_mag']
+
         lc_mag_norm = minmax_scale(-1 * lc_mag, feature_range=norm_range)
         synth_mag_norm = minmax_scale(-1 * synth_mag, feature_range=norm_range)
+
         lc_data = {'time': lc_time, "mag": lc_mag, "timestamp": dt2timestamp(lc_time), "norm_mag": lc_mag_norm}
         synth_data = {'time': synth_time, "mag": synth_mag, "timestamp": dt2timestamp(synth_time), "norm_mag": synth_mag_norm}
         spl = make_interp_spline(lc_data['timestamp'], lc_data['norm_mag'])  # , bc_type="natural")
         lc_mag_new = spl(synth_data['timestamp']).T
+
+        lc_mag_new = minmax_scale(lc_mag_new, feature_range=norm_range)
+
         mdif = lc_mag_new - synth_data['norm_mag']
+
     else:
         lc_data = {'time': lc_time, "mag": lc_mag, "timestamp": dt2timestamp(lc_time)}
         synth_data = {'time': synth_time, "mag": synth_mag, "timestamp": dt2timestamp(synth_time)}
@@ -387,13 +401,15 @@ def model_diff(synth_time, synth_mag, lc_time, lc_mag, conf_res, norm_mag=True,
 
     if save_plot:
         # norm data even if norm_mag=False
-        lc_mag_norm = minmax_scale(-1 * lc_mag, feature_range=norm_range)
-        synth_mag_norm = minmax_scale(-1 * synth_mag, feature_range=norm_range)
-        lc_data = {'time': lc_time, "mag": lc_mag, "timestamp": dt2timestamp(lc_time), "norm_mag": lc_mag_norm}
-        synth_data = {'time': synth_time, "mag": synth_mag, "timestamp": dt2timestamp(synth_time),
+        if norm_mag is False:  # if True than we already have this data
+            lc_mag_norm = minmax_scale(-1 * lc_mag, feature_range=norm_range)
+            synth_mag_norm = minmax_scale(-1 * synth_mag, feature_range=norm_range)
+            lc_data = {'time': lc_time, "mag": lc_mag, "timestamp": dt2timestamp(lc_time), "norm_mag": lc_mag_norm}
+            synth_data = {'time': synth_time, "mag": synth_mag, "timestamp": dt2timestamp(synth_time),
                       "norm_mag": synth_mag_norm}
-        spl = make_interp_spline(lc_data['timestamp'], lc_data['norm_mag'])  # , bc_type="natural")
-        lc_mag_new = spl(synth_data['timestamp']).T
+            spl = make_interp_spline(lc_data['timestamp'], lc_data['norm_mag'])  # , bc_type="natural")
+            lc_mag_new = spl(synth_data['timestamp']).T
+            lc_mag_new = minmax_scale(lc_mag_new, feature_range=norm_range)
 
         plt.rcParams['figure.figsize'] = [12, 8]
 

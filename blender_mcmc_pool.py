@@ -62,7 +62,7 @@ def model(var_params, conf_res, delete_tmp=True):
     # else:
     #     sys.exit()
 
-    flux_res = process_video(video_file)
+    flux_res = process_video(video_file, w=0)
     if delete_tmp:
         os.remove(video_file)
         os.remove(tmp_script_path + rnd_gen)

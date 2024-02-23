@@ -31,7 +31,7 @@ if __name__ == '__main__':
     lc_time, lc_mag, lc_mag_err = read_original_lc(obs_lc_path)
     obs_lc_data = [lc_time, lc_mag, lc_mag_err]
 
-    res = process_video(video_file_path, w=30)
+    res = process_video(video_file_path, w=0)
     synth_lc = make_lc(N=res['count'], flux=res['flux'],
                        s_date=conf_res['lc_start_date'], s_time=conf_res['lc_start_time'],
                        norad=conf_res['sat_norad'], fps=conf_res["fps"],
