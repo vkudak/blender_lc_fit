@@ -214,7 +214,10 @@ if __name__ == "__main__":
     print("Fitted parameters:")
     print(samples[np.argmax(sampler.flatlnprobability)])
 
-    print(f"--- {(time.time() - start_time) / 60.0} minutes ---")
+    t_hour = (time.time() - start_time) / 3600.0
+
+    # print(f"--- {(time.time() - start_time) / 60.0} minutes ---")
+    print(f"---  %2dh %2dm  ---" % (t_hour, (t_hour % 1 * 60)))
 
     # Plot best result
     theta_max = samples[np.argmax(sampler.flatlnprobability)]
