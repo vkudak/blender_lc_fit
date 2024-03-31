@@ -139,7 +139,8 @@ def run_mcmc_pool(p0, nwalkers, niter, ndim, lnprob, ncpus=cpu_count()):
     save_file = conf_res['save_mcmc_file']
     if save_file is not None:
         if os.path.isfile(save_file):
-            os.remove(save_file)
+            if conf_res['rewrite_h5'] is True:
+                os.remove(save_file)
         backend = emcee.backends.HDFBackend(save_file)
         backend.reset(nwalkers, ndim)
 

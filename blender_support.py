@@ -44,6 +44,7 @@ def read_config(conf_file):
             niter = config.getint('mcmc_params', 'niter')
             nwalkers = config.getint('mcmc_params', 'nwalkers')
             save_mcmc_file = config.get('mcmc_params', 'save_mcmc_file', fallback=None)
+            rewrite_h5 = config.getboolean('mcmc_params', "rewrite_h5", fallback=True)
 
             sat_name = config.get('satellite', 'name')
             sat_cospar = config.get('satellite', 'cospar')
@@ -76,6 +77,7 @@ def read_config(conf_file):
                     'niter': niter,
                     'niter_burn': niter_burn,
                     'save_mcmc_file': save_mcmc_file,
+                    'rewrite_h5': rewrite_h5,
 
                     'sat_name': sat_name,
                     'sat_cospar': sat_cospar,
