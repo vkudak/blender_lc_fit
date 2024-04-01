@@ -33,7 +33,7 @@ def model(var_params, conf_res, delete_tmp=True):
     # var_params = (var['value'] for var in conf_res['var_params_list'])
     # print("problem....")
     video_file = make_blender_script(tmp_script_path=tmp_script_path + rnd_gen,
-                                     conf_res=conf_res, var_list=var_params #conf_res['var_params_list']
+                                     conf_res=conf_res, var_list=var_params  # conf_res['var_params_list']
                                      )
 
     if video_file is False:
@@ -46,9 +46,10 @@ def model(var_params, conf_res, delete_tmp=True):
     # # print("video_file=", video_file)
     # print("isfile", os.path.isfile(video_file))
 
-
     # generate new video file
-    res_code = blender_render(blender_path=conf_res["blender_path"], tmp_script_path=tmp_script_path + rnd_gen, log_dir_path=temp_dir_path)
+    res_code = blender_render(blender_path=conf_res["blender_path"],
+                              tmp_script_path=tmp_script_path + rnd_gen,
+                              log_dir_path=temp_dir_path)
     # print('res_code', res_code)
     if res_code != 0:
         sys.exit()
@@ -69,10 +70,10 @@ def model(var_params, conf_res, delete_tmp=True):
 
     # process flux and get LC
     synth_lc = make_lc(N=flux_res['count'], flux=flux_res['flux'],
-                        s_date=conf_res['lc_start_date'], s_time=conf_res['lc_start_time'],
-                        norad=conf_res['sat_norad'], fps=conf_res["fps"],
-                        st_user=conf_res['st_user'], st_pass=conf_res['st_pass']
-                        )
+                       s_date=conf_res['lc_start_date'], s_time=conf_res['lc_start_time'],
+                       norad=conf_res['sat_norad'], fps=conf_res["fps"],
+                       st_user=conf_res['st_user'], st_pass=conf_res['st_pass']
+                       )
 
     return synth_lc
 
@@ -91,7 +92,6 @@ def lnlike(var_params, lc_time, lc_mag, lc_mag_err, conf_res):
         np.savetxt(fv, mlist, fmt='%10.2f', delimiter=" ", newline=" ")
         fv.write("\n")
     ###############################################################
-
 
     # return -0.5 * np.sum(((y - y_model) / yerr) ** 2)
 
