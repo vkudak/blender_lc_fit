@@ -186,6 +186,9 @@ if __name__ == "__main__":
 
     if args["observed_lc"]:
         obs_lc_path = args["observed_lc"]
+    else:
+        print("Enter observed LC [-l or --observed_lc] parameter")
+        sys.exit()
 
     conf_res = read_config(conf_file=config_name)
 
