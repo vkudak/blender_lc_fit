@@ -72,7 +72,8 @@ def model(var_params, conf_res, delete_tmp=True):
     synth_lc = make_lc(N=flux_res['count'], flux=flux_res['flux'],
                        s_date=conf_res['lc_start_date'], s_time=conf_res['lc_start_time'],
                        norad=conf_res['sat_norad'], fps=conf_res["fps"],
-                       st_user=conf_res['st_user'], st_pass=conf_res['st_pass']
+                       # st_user=conf_res['st_user'], st_pass=conf_res['st_pass']
+                       tle_line1=conf_res['tle_line1'], tle_line2=conf_res['tle_line2']
                        )
 
     return synth_lc

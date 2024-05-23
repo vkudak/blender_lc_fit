@@ -35,7 +35,7 @@ if __name__ == '__main__':
     synth_lc = make_lc(N=res['count'], flux=res['flux'],
                        s_date=conf_res['lc_start_date'], s_time=conf_res['lc_start_time'],
                        norad=conf_res['sat_norad'], fps=conf_res["fps"],
-                       st_user=conf_res['st_user'], st_pass=conf_res['st_pass']
+                       tle_line1=conf_res['tle_line1'], tle_line2=conf_res['tle_line2']
                        )
     # Plot in tmp dir from config file
     model_diff(synth_lc['time'], synth_lc['mst'], lc_time, lc_mag,

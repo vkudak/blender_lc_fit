@@ -14,6 +14,7 @@ import cv2
 from spacetrack import SpaceTrackClient
 import spacetrack.operators as op
 from skyfield.api import load, wgs84, utc
+from skyfield.sgp4lib import EarthSatellite
 
 from sklearn.preprocessing import minmax_scale
 from scipy.interpolate import BSpline, make_interp_spline
@@ -224,7 +225,7 @@ def blender_render(blender_path, tmp_script_path, log_dir_path):
     return res.returncode
 
 
-def make_lc(N, flux, s_date, s_time, norad, fps, st_user, st_pass, location=[+48.63, 22.33, 180], A=16.4, plot=False):
+def make_lc(N, flux, s_date, s_time, norad, fps, tle_line1, tle_line2, location=[+48.63, 22.33, 180], A=16.4, plot=False):
     """
     Create a LC from Counts and Flux data
     Args:
@@ -234,6 +235,7 @@ def make_lc(N, flux, s_date, s_time, norad, fps, st_user, st_pass, location=[+48
         s_time: start time (str) 20:15:31
         norad: NORAD ID of satellite
         fps: frame per second
+        tle_line1 & tle_line2 : TLE of Satellite
         location: [latitude, longitude, height], default is Uzhhorod
         A: zero-point for mag standartization
 
@@ -245,21 +247,7 @@ def make_lc(N, flux, s_date, s_time, norad, fps, st_user, st_pass, location=[+48
     start_date = datetime.strptime(s_date + " " + s_time, '%Y-%m-%d %H:%M:%S')
     date_time = [start_date + timedelta(seconds=x/fps) for x in N]
 
-    if not os.path.isfile(f'tle_{start_date.date().strftime("%Y_%m_%d")}_{norad}.txt'):
-        tle_filename = get_tle(st_user, st_pass, epoch=start_date.date(), norad=norad)
-    else:
-        tle_filename = os.path.abspath(f'tle_{start_date.date().strftime("%Y_%m_%d")}_{norad}.txt')
-
-    if tle_filename:
-        satellites = load.tle_file(url=tle_filename)
-        # for sat in satellites:
-        #     print(sat.model.jdsatepoch)
-        # sys.exit()
-        sat = satellites[-1]
-        # print("SATELLITE", sat)
-    else:
-        print("Cant load TLE. Cannot continue")
-        sys.exit()
+    sat = EarthSatellite(line1=tle_line1, line2=tle_line2, name=str(norad))
 
     mag = [-2.5 * math.log10(f) for f in flux]
     mag = np.array(mag) + A
