@@ -12,3 +12,4 @@ python-dotenv~=1.0.0
 h5py~=3.11.0
 tqdm~=4.66.1
 dime-sampler~=0.9.0
+packaging

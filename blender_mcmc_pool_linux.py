@@ -15,6 +15,23 @@ from dime_sampler import DIMEMove
 
 from blender_support import *
 
+import copy
+import matplotlib.path
+from packaging import version
+
+
+def fixed_path_deepcopy(self, memo=None):
+    if memo is None:
+        memo = {}
+    # Створюємо чисту копію об'єкта Path в обхід зламаного super()
+    p = self.__class__(
+        copy.deepcopy(self.vertices, memo),
+        copy.deepcopy(self.codes, memo),
+        _interpolation_steps=self._interpolation_steps,
+        readonly=False
+    )
+    memo[id(self)] = p
+    return p
 
 def model(var_params, conf_res, delete_tmp=True):
     """
@@ -181,6 +198,14 @@ if __name__ == "__main__":
     parser.add_argument('-c', '--config', help='Specify config file', required=False)
     parser.add_argument('-l', '--observed_lc', help="Path to observed LC", required=True)
     args = vars(parser.parse_args())
+
+    # Перевіряємо, чи це Python 3.14 або новіший
+    if sys.version_info >= (3, 14):
+        # Патч потрібен для поточних версій Matplotlib (наприклад, 3.8, 3.9, 3.10)
+        # Щойно вийде офіційне оновлення (наприклад, 3.11.0), патч автоматично вимкнеться
+        if version.parse(matplotlib.__version__) < version.parse("3.11.0"):
+            # Підміняємо оригінальний метод нашим виправленим
+            matplotlib.path.Path.__deepcopy__ = fixed_path_deepcopy
 
     if args["config"]:
         config_name = args["config"]
