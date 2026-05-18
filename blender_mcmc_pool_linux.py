@@ -157,10 +157,11 @@ def run_mcmc_pool(p0, nwalkers, niter, ndim, lnprob, ncpus=cpu_count()):
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob,
                                         pool=pool,
                                         backend=backend,
-                                        moves=[
-                                            (emcee.moves.DEMove(), 0.8),
-                                            (DIMEMove(), 0.2)
-                                        ]
+                                        # moves=[
+                                        #     (emcee.moves.DEMove(), 0.8),
+                                        #     (DIMEMove(), 0.2)
+                                        # ]
+                                        moves=DIMEMove()
                                         )
 
         print("Running burn-in...")
