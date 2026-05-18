@@ -193,7 +193,7 @@ def run_mcmc_pool(p0, nwalkers, niter, ndim, lnprob, ncpus=cpu_count()):
 
 
 if __name__ == "__main__":
-    load_dotenv('.env')
+    load_dotenv('.env', override=True)
     parser = argparse.ArgumentParser(description='LC simulation with MCMC method and Blender software')
     parser.add_argument('-c', '--config', help='Specify config file', required=False)
     parser.add_argument('-l', '--observed_lc', help="Path to observed LC", required=True)
