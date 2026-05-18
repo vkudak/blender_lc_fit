@@ -237,7 +237,7 @@ if __name__ == "__main__":
 
     print("Fitted parameters:")
     f_out.write("Fitted parameters:\n")
-    print(samples[np.argmax(sampler.flatlnprobability)])
+    print(str(samples[np.argmax(sampler.flatlnprobability)]))
     f_out.write(samples[np.argmax(sampler.flatlnprobability)])
 
     t_hour = (time.time() - start_time) / 3600.0
