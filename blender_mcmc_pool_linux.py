@@ -286,45 +286,68 @@ if __name__ == "__main__":
     # fig.tight_layout()
     # plt.savefig(os.path.join(conf_res['temp_dir_name'], "corner_plot.svg"))
 
-    start_time = time.time()
-
+    # Запуск MCMC пулу
     sampler, pos, prob, state = run_mcmc_pool(p0, nwalkers, niter, ndim, lnprob, ncpus=conf_res['ncpu'])
 
-    # Витягуємо кількість кроків вигорання (burn-in) з конфігу
-    burn_in = int(conf_res['niter_burn'])
-
-    # Отримуємо семпли та ймовірності за допомогою методів, де індекси ЗАВЖДИ збігаються
-    # Параметр discard відкидає початкові нестабільні кроки (burn-in)
+    # Синхронізація через get_chain з урахуванням вигорання
+    burn_in = int(conf_res['mcmc_params']['niter_burn'])
     samples = sampler.get_chain(discard=burn_in, flat=True)
     log_probabilities = sampler.get_log_prob(discard=burn_in, flat=True)
 
-    # Знаходимо індекс точки з НАЙВИЩОЮ ймовірністю (Maximum Likelihood)
+    # 1. Розрахунок ТОЧКИ МАКСИМУМУ ЙМОВІРНОСТІ (Log Probability Max)
     best_index = np.argmax(log_probabilities)
-    theta_max = samples[best_index]
+    theta_max_prob = samples[best_index]
 
+    # 2. Розрахунок ТОЧКИ МЕДІАНИ (Центр розподілу Cornerplot)
+    theta_median = np.median(samples, axis=0)
+
+    # Запис ОБВОХ результатів у файл out_res.txt
     out_filename = os.path.join(conf_res['temp_dir_name'], "out_res.txt")
-
-    # Використовуємо конструкцію 'with open', щоб файл гарантовано закрився після запису
     with open(out_filename, "w") as f_out:
-        print("Fitted parameters:")
-        f_out.write("Fitted parameters:\n")
+        print("\n--- ОБЧИСЛЕНІ ПАРАМЕТРИ ---")
+        print(f"Maximum Likelihood (Log_prob max): {theta_max_prob}")
+        print(f"Median (Cornerplot center): {theta_median}")
 
-        print(theta_max)
-        f_out.write(str(theta_max) + "\n")
+        f_out.write("--- MCMC Results ---\n")
+        f_out.write(f"Maximum Likelihood Parameters (Max Log_prob): {theta_max_prob}\n")
+        f_out.write(f"Median Parameters (Cornerplot): {theta_median}\n")
 
         duration = timedelta(seconds=int(time.time() - start_time))
         f_out.write(f"--- Exec Time: {duration} (Days, HH:MM:SS) ---\n")
         print(f"--- Exec Time: {duration} (Days, HH:MM:SS) ---")
 
-    # Plot best result
-    # Тепер theta_max точно відповідає пікам (медіанам) на вашому графіку corner
-    best_synth_lc = model(theta_max, conf_res, delete_tmp=False)
+    # =========================================================================
+    # ГЕНЕРАЦІЯ МОДЕЛІ ТА ГРАФІКА ДЛЯ МАКСИМУМУ ЙМОВІРНОСТІ
+    # =========================================================================
+    print("\nГенеруємо криву блиску та графік для: MAXIMUM LIKELIHOOD...")
 
-    m_diff = model_diff(best_synth_lc['time'], best_synth_lc['mst'], lc_time, lc_mag, norm_mag=True, save_plot=True,
-                        plot_title=str(theta_max), conf_res=conf_res, norm_range=(0, 1))
+    # Тимчасово підміняємо ім'я директорії або префікс у функції, якщо model_diff це підтримує.
+    # Якщо ваша функція model_diff жорстко зберігає у фіксоване ім'я,
+    # ми адаптуємо назви через conf_res (якщо ваш скрипт це враховує).
+    best_synth_lc_max = model(theta_max_prob, conf_res, delete_tmp=False)
 
-    # Posterior Spread or Cornerplot
-    # Семпли тут і в theta_max тепер синхронізовані, оскільки обидва пройшли через однаковий discard
+    # Створюємо графік залишків для Максимуму (зберігаємо з поміткою "max")
+    # ПРИМІТКА: Переконайтеся, що ваша функція model_diff вміє додавати назву до файлу,
+    # або змініть логіку збереження всередині неї, базуючись на plot_title.
+    m_diff_max = model_diff(best_synth_lc_max['time'], best_synth_lc_max['mst'], lc_time, lc_mag,
+                            norm_mag=True, save_plot=True, plot_title=f"Max_LogProb_{theta_max_prob}",
+                            conf_res=conf_res, sub_name="max", norm_range=(0, 1))
+
+    # =========================================================================
+    # ГЕНЕРАЦІЯ МОДЕЛІ ТА ГРАФІКА ДЛЯ МЕДІАНИ
+    # =========================================================================
+    print("\nГенеруємо криву блиску та графік для: MEDIAN...")
+    best_synth_lc_median = model(theta_median, conf_res, delete_tmp=False)
+
+    # Створюємо графік залишків для Медіани (зберігаємо з поміткою "median")
+    m_diff_median = model_diff(best_synth_lc_median['time'], best_synth_lc_median['mst'], lc_time, lc_mag,
+                               norm_mag=True, save_plot=True, plot_title=f"Median_{theta_median}",
+                               conf_res=conf_res, sub_name="median", norm_range=(0, 1))
+
+    # =========================================================================
+    # ПОБУДОВА CORNERPLOT
+    # =========================================================================
     fig = corner.corner(samples, show_titles=True, labels=labels, plot_datapoints=True, quantiles=[0.16, 0.5, 0.84])
     fig.tight_layout()
     plt.savefig(os.path.join(conf_res['temp_dir_name'], "corner_plot.svg"))
+    print("\nУсі графіки та відео успішно згенеровано!")

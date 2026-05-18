@@ -342,7 +342,7 @@ def timestamp2dt(stamp_list):
 
 
 def model_diff(synth_time, synth_mag, lc_time, lc_mag, conf_res, norm_mag=True,
-               save_plot=False, plot_title=None, norm_range=(0, 1)):
+               save_plot=False, plot_title=None, sub_name='', norm_range=(0, 1)):
     """
     Calculate difference between original LC and synthetic
     Interpolate with spline original LC and produce new one where time is same as in synthetic LC
@@ -441,7 +441,7 @@ def model_diff(synth_time, synth_mag, lc_time, lc_mag, conf_res, norm_mag=True,
         ax2.set_xlabel("Time (UT)")
 
         fig.tight_layout()
-        plt.savefig(os.path.join(conf_res["temp_dir_name"], "resid_" + name.replace(".", "_") + ".png"))
+        plt.savefig(os.path.join(conf_res["temp_dir_name"], "resid_" + sub_name + "_" + name.replace(".", "_") + ".png"))
 
     return mdif
 
