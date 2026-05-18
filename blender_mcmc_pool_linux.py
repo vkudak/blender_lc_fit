@@ -269,8 +269,8 @@ if __name__ == "__main__":
     f_out.write(str(samples[np.argmax(sampler.flatlnprobability)]))
 
     duration = timedelta(seconds=int(time.time() - start_time))
-    f_out.write(f"--- Час виконання: {duration} (Days, HH:MM:SS) ---")
-    print(f"--- Час виконання: {duration} (Days, HH:MM:SS) ---")
+    f_out.write(f"--- Exec Time: {duration} (Days, HH:MM:SS) ---")
+    print(f"--- Exec Time: {duration} (Days, HH:MM:SS) ---")
 
     # Plot best result
     theta_max = samples[np.argmax(sampler.flatlnprobability)]
