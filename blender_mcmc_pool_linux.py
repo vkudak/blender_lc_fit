@@ -199,6 +199,9 @@ if __name__ == "__main__":
     parser.add_argument('-l', '--observed_lc', help="Path to observed LC", required=True)
     args = vars(parser.parse_args())
 
+    # Примусово видаляємо змінну, яка змушує Blender шукати gvfs
+    os.environ.pop("XDG_RUNTIME_DIR", None)
+
     # Перевіряємо, чи це Python 3.14 або новіший
     if sys.version_info >= (3, 14):
         # Патч потрібен для поточних версій Matplotlib (наприклад, 3.8, 3.9, 3.10)
