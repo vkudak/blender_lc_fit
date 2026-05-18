@@ -291,7 +291,7 @@ if __name__ == "__main__":
     sampler, pos, prob, state = run_mcmc_pool(p0, nwalkers, niter, ndim, lnprob, ncpus=conf_res['ncpu'])
 
     # Витягуємо кількість кроків вигорання (burn-in) з конфігу
-    burn_in = int(conf_res['mcmc_params']['niter_burn'])
+    burn_in = int(conf_res['niter_burn'])
 
     # Отримуємо семпли та ймовірності за допомогою методів, де індекси ЗАВЖДИ збігаються
     # Параметр discard відкидає початкові нестабільні кроки (burn-in)
