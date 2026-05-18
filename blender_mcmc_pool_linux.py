@@ -6,6 +6,9 @@ from multiprocessing import Pool, cpu_count
 import platform
 import corner
 
+import os
+os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
+
 import emcee
 from dotenv import load_dotenv
 from dime_sampler import DIMEMove
