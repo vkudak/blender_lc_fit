@@ -268,12 +268,9 @@ if __name__ == "__main__":
     print(samples[np.argmax(sampler.flatlnprobability)])
     f_out.write(str(samples[np.argmax(sampler.flatlnprobability)]))
 
-    t_hour = (time.time() - start_time) / 3600.0
-
-    # print(f"--- {(time.time() - start_time) / 60.0} minutes ---")
-    print(f"---  %2dh %2dm  ---" % (t_hour, (t_hour % 1 * 60)))
-
-    f_out.write(f"---  %2dh %2dm  ---" % (t_hour, (t_hour % 1 * 60)))
+    duration = timedelta(seconds=int(time.time() - start_time))
+    f_out.write(f"--- Час виконання: {duration} (Days, HH:MM:SS) ---")
+    print(f"--- Час виконання: {duration} (Days, HH:MM:SS) ---")
 
     # Plot best result
     theta_max = samples[np.argmax(sampler.flatlnprobability)]
