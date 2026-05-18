@@ -188,6 +188,7 @@ def make_blender_script(tmp_script_path, conf_res, var_list, sub_name=''):
         tmp_script_path: temporary created script path
         conf_res: all data from config file
         var_list: list of variable parameters [{"name:spin", "value":5, "min_val:3", 'max_val':6}, {}, {}]
+        sub_name: str, sub_name for file
     Return:
         True or False. Script saved in entered path dir.
     """
