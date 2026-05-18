@@ -33,12 +33,14 @@ def fixed_path_deepcopy(self, memo=None):
     memo[id(self)] = p
     return p
 
-def model(var_params, conf_res, delete_tmp=True):
+def model(var_params, conf_res, delete_tmp=True, sub_name=""):
     """
-    Generate synthetic LC with Blender and python script defined in config file
+    Generate synthetic LC with Blender and Python script defined in config file
     Args:
         conf_res: dict of config parameters
         var_params: Spin period, phase of period, period of precession, phase of precession and phase angle
+        delete_tmp: (bool) Delete generated video ?
+        sub_name: (str) sub name of the video file
     Return:
         Synthetic LC, dict {'time': time, 'mst': mag, 'mr': mr, 'mz': mz, 'el': el, 'range': dist}
     """
@@ -53,7 +55,7 @@ def model(var_params, conf_res, delete_tmp=True):
     # var_params = (var['value'] for var in conf_res['var_params_list'])
     # print("problem....")
     video_file = make_blender_script(tmp_script_path=tmp_script_path + rnd_gen,
-                                     conf_res=conf_res, var_list=var_params  # conf_res['var_params_list']
+                                     conf_res=conf_res, var_list=var_params , sub_name=sub_name # conf_res['var_params_list']
                                      )
 
     if video_file is False:
@@ -286,11 +288,12 @@ if __name__ == "__main__":
     # fig.tight_layout()
     # plt.savefig(os.path.join(conf_res['temp_dir_name'], "corner_plot.svg"))
 
+    start_time = time.time()
     # Запуск MCMC пулу
     sampler, pos, prob, state = run_mcmc_pool(p0, nwalkers, niter, ndim, lnprob, ncpus=conf_res['ncpu'])
 
     # Синхронізація через get_chain з урахуванням вигорання
-    burn_in = int(conf_res['mcmc_params']['niter_burn'])
+    burn_in = int(conf_res['niter_burn'])
     samples = sampler.get_chain(discard=burn_in, flat=True)
     log_probabilities = sampler.get_log_prob(discard=burn_in, flat=True)
 

@@ -181,7 +181,7 @@ def process_video(video_file_path, w=30):
 
 
 # def make_blender_script(template_path, tmp_script_path, sat_model_path, output_dir, resolution, fps, sat_spin):
-def make_blender_script(tmp_script_path, conf_res, var_list):
+def make_blender_script(tmp_script_path, conf_res, var_list, sub_name=''):
     """
     Prepare Blender script from template and passed parameters
     Args:
@@ -197,7 +197,8 @@ def make_blender_script(tmp_script_path, conf_res, var_list):
 
         # print("point 1")
         with open(tmp_script_path, mode="w") as fp:
-            video_file_full_path = os.path.join(conf_res['temp_dir_name'], "rendered_file_" + gen_random_str() + ".mp4")
+            video_file_full_path = os.path.join(conf_res['temp_dir_name'], "rendered_file_" +
+                                                sub_name + "_" + gen_random_str() + ".mp4")
 
             rendered_script = script_template.render(
                 conf_res=conf_res,
