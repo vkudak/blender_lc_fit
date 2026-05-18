@@ -255,32 +255,76 @@ if __name__ == "__main__":
     f.write("   " + "    ".join(labels) + "    resid\n")
     f.close()
 
+    # start_time = time.time()
+    #
+    # sampler, pos, prob, state = run_mcmc_pool(p0, nwalkers, niter, ndim, lnprob, ncpus=conf_res['ncpu'])
+    # samples = sampler.flatchain
+    #
+    # out_filename = os.path.join(conf_res['temp_dir_name'], "out_res.txt")
+    # f_out = open(out_filename, "w")
+    #
+    # print("Fitted parameters:")
+    # f_out.write("Fitted parameters:\n")
+    # print(samples[np.argmax(sampler.flatlnprobability)])
+    # f_out.write(str(samples[np.argmax(sampler.flatlnprobability)]))
+    #
+    # duration = timedelta(seconds=int(time.time() - start_time))
+    # f_out.write(f"--- Exec Time: {duration} (Days, HH:MM:SS) ---")
+    # print(f"--- Exec Time: {duration} (Days, HH:MM:SS) ---")
+    #
+    #
+    # # Plot best result
+    # theta_max = samples[np.argmax(sampler.flatlnprobability)]
+    # best_synth_lc = model(theta_max, conf_res, delete_tmp=False)
+    #
+    # m_diff = model_diff(best_synth_lc['time'], best_synth_lc['mst'], lc_time, lc_mag, norm_mag=True, save_plot=True,
+    #                     plot_title=theta_max, conf_res=conf_res, norm_range=(0, 1))
+    #
+    # # Posterior Spread or Cornerplot
+    # # labels = ['P', 'p_phase', 'P_pr', 'pr_phase', 'pr_angle']
+    # fig = corner.corner(samples, show_titles=True, labels=labels, plot_datapoints=True, quantiles=[0.16, 0.5, 0.84])
+    # fig.tight_layout()
+    # plt.savefig(os.path.join(conf_res['temp_dir_name'], "corner_plot.svg"))
+
     start_time = time.time()
 
     sampler, pos, prob, state = run_mcmc_pool(p0, nwalkers, niter, ndim, lnprob, ncpus=conf_res['ncpu'])
-    samples = sampler.flatchain
+
+    # Витягуємо кількість кроків вигорання (burn-in) з конфігу
+    burn_in = int(conf_res['mcmc_params']['niter_burn'])
+
+    # Отримуємо семпли та ймовірності за допомогою методів, де індекси ЗАВЖДИ збігаються
+    # Параметр discard відкидає початкові нестабільні кроки (burn-in)
+    samples = sampler.get_chain(discard=burn_in, flat=True)
+    log_probabilities = sampler.get_log_prob(discard=burn_in, flat=True)
+
+    # Знаходимо індекс точки з НАЙВИЩОЮ ймовірністю (Maximum Likelihood)
+    best_index = np.argmax(log_probabilities)
+    theta_max = samples[best_index]
 
     out_filename = os.path.join(conf_res['temp_dir_name'], "out_res.txt")
-    f_out = open(out_filename, "w")
 
-    print("Fitted parameters:")
-    f_out.write("Fitted parameters:\n")
-    print(samples[np.argmax(sampler.flatlnprobability)])
-    f_out.write(str(samples[np.argmax(sampler.flatlnprobability)]))
+    # Використовуємо конструкцію 'with open', щоб файл гарантовано закрився після запису
+    with open(out_filename, "w") as f_out:
+        print("Fitted parameters:")
+        f_out.write("Fitted parameters:\n")
 
-    duration = timedelta(seconds=int(time.time() - start_time))
-    f_out.write(f"--- Exec Time: {duration} (Days, HH:MM:SS) ---")
-    print(f"--- Exec Time: {duration} (Days, HH:MM:SS) ---")
+        print(theta_max)
+        f_out.write(str(theta_max) + "\n")
+
+        duration = timedelta(seconds=int(time.time() - start_time))
+        f_out.write(f"--- Exec Time: {duration} (Days, HH:MM:SS) ---\n")
+        print(f"--- Exec Time: {duration} (Days, HH:MM:SS) ---")
 
     # Plot best result
-    theta_max = samples[np.argmax(sampler.flatlnprobability)]
+    # Тепер theta_max точно відповідає пікам (медіанам) на вашому графіку corner
     best_synth_lc = model(theta_max, conf_res, delete_tmp=False)
 
     m_diff = model_diff(best_synth_lc['time'], best_synth_lc['mst'], lc_time, lc_mag, norm_mag=True, save_plot=True,
-                        plot_title=theta_max, conf_res=conf_res, norm_range=(0, 1))
+                        plot_title=str(theta_max), conf_res=conf_res, norm_range=(0, 1))
 
     # Posterior Spread or Cornerplot
-    # labels = ['P', 'p_phase', 'P_pr', 'pr_phase', 'pr_angle']
+    # Семпли тут і в theta_max тепер синхронізовані, оскільки обидва пройшли через однаковий discard
     fig = corner.corner(samples, show_titles=True, labels=labels, plot_datapoints=True, quantiles=[0.16, 0.5, 0.84])
     fig.tight_layout()
     plt.savefig(os.path.join(conf_res['temp_dir_name'], "corner_plot.svg"))
