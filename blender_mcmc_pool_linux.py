@@ -227,13 +227,21 @@ if __name__ == "__main__":
 
     sampler, pos, prob, state = run_mcmc_pool(p0, nwalkers, niter, ndim, lnprob, ncpus=conf_res['ncpu'])
     samples = sampler.flatchain
+
+    out_filename = os.path.join(conf_res['temp_dir_name'], "out_res.txt")
+    f_out = open(out_filename, "w")
+
     print("Fitted parameters:")
+    f_out.write("Fitted parameters:\n")
     print(samples[np.argmax(sampler.flatlnprobability)])
+    f_out.write(samples[np.argmax(sampler.flatlnprobability)])
 
     t_hour = (time.time() - start_time) / 3600.0
 
     # print(f"--- {(time.time() - start_time) / 60.0} minutes ---")
     print(f"---  %2dh %2dm  ---" % (t_hour, (t_hour % 1 * 60)))
+
+    f_out.write(f"---  %2dh %2dm  ---" % (t_hour, (t_hour % 1 * 60)))
 
     # Plot best result
     theta_max = samples[np.argmax(sampler.flatlnprobability)]
