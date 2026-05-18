@@ -327,7 +327,7 @@ if __name__ == "__main__":
     # Тимчасово підміняємо ім'я директорії або префікс у функції, якщо model_diff це підтримує.
     # Якщо ваша функція model_diff жорстко зберігає у фіксоване ім'я,
     # ми адаптуємо назви через conf_res (якщо ваш скрипт це враховує).
-    best_synth_lc_max = model(theta_max_prob, conf_res, delete_tmp=False)
+    best_synth_lc_max = model(theta_max_prob, conf_res, delete_tmp=False, sub_name="max")
 
     # Створюємо графік залишків для Максимуму (зберігаємо з поміткою "max")
     # ПРИМІТКА: Переконайтеся, що ваша функція model_diff вміє додавати назву до файлу,
@@ -340,7 +340,7 @@ if __name__ == "__main__":
     # ГЕНЕРАЦІЯ МОДЕЛІ ТА ГРАФІКА ДЛЯ МЕДІАНИ
     # =========================================================================
     print("\nGenerating LC and residuals for: MEDIAN...")
-    best_synth_lc_median = model(theta_median, conf_res, delete_tmp=False)
+    best_synth_lc_median = model(theta_median, conf_res, delete_tmp=False, sub_name="median")
 
     # Створюємо графік залишків для Медіани (зберігаємо з поміткою "median")
     m_diff_median = model_diff(best_synth_lc_median['time'], best_synth_lc_median['mst'], lc_time, lc_mag,
