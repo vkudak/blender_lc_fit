@@ -181,13 +181,14 @@ def process_video(video_file_path, w=30):
 
 
 # def make_blender_script(template_path, tmp_script_path, sat_model_path, output_dir, resolution, fps, sat_spin):
-def make_blender_script(tmp_script_path, conf_res, var_list):
+def make_blender_script(tmp_script_path, conf_res, var_list, sub_name=''):
     """
     Prepare Blender script from template and passed parameters
     Args:
         tmp_script_path: temporary created script path
         conf_res: all data from config file
         var_list: list of variable parameters [{"name:spin", "value":5, "min_val:3", 'max_val':6}, {}, {}]
+        sub_name: str, sub_name for file
     Return:
         True or False. Script saved in entered path dir.
     """
@@ -197,7 +198,8 @@ def make_blender_script(tmp_script_path, conf_res, var_list):
 
         # print("point 1")
         with open(tmp_script_path, mode="w") as fp:
-            video_file_full_path = os.path.join(conf_res['temp_dir_name'], "rendered_file_" + gen_random_str() + ".mp4")
+            video_file_full_path = os.path.join(conf_res['temp_dir_name'], "rendered_file_" +
+                                                sub_name + "_" + gen_random_str() + ".mp4")
 
             rendered_script = script_template.render(
                 conf_res=conf_res,
@@ -342,7 +344,7 @@ def timestamp2dt(stamp_list):
 
 
 def model_diff(synth_time, synth_mag, lc_time, lc_mag, conf_res, norm_mag=True,
-               save_plot=False, plot_title=None, norm_range=(0, 1)):
+               save_plot=False, plot_title=None, sub_name='', norm_range=(0, 1)):
     """
     Calculate difference between original LC and synthetic
     Interpolate with spline original LC and produce new one where time is same as in synthetic LC
@@ -441,7 +443,7 @@ def model_diff(synth_time, synth_mag, lc_time, lc_mag, conf_res, norm_mag=True,
         ax2.set_xlabel("Time (UT)")
 
         fig.tight_layout()
-        plt.savefig(os.path.join(conf_res["temp_dir_name"], "resid_" + name.replace(".", "_") + ".png"))
+        plt.savefig(os.path.join(conf_res["temp_dir_name"], "resid_" + sub_name + "_" + name.replace(".", "_") + ".png"))
 
     return mdif
 

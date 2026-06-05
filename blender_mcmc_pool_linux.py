@@ -6,19 +6,41 @@ from multiprocessing import Pool, cpu_count
 import platform
 import corner
 
+import os
+os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
+
 import emcee
 from dotenv import load_dotenv
 from dime_sampler import DIMEMove
 
 from blender_support import *
 
+import copy
+import matplotlib.path
+from packaging import version
 
-def model(var_params, conf_res, delete_tmp=True):
+
+def fixed_path_deepcopy(self, memo=None):
+    if memo is None:
+        memo = {}
+    # Створюємо чисту копію об'єкта Path в обхід зламаного super()
+    p = self.__class__(
+        copy.deepcopy(self.vertices, memo),
+        copy.deepcopy(self.codes, memo),
+        _interpolation_steps=self._interpolation_steps,
+        readonly=False
+    )
+    memo[id(self)] = p
+    return p
+
+def model(var_params, conf_res, delete_tmp=True, sub_name=""):
     """
-    Generate synthetic LC with Blender and python script defined in config file
+    Generate synthetic LC with Blender and Python script defined in config file
     Args:
         conf_res: dict of config parameters
         var_params: Spin period, phase of period, period of precession, phase of precession and phase angle
+        delete_tmp: (bool) Delete generated video ?
+        sub_name: (str) sub name of the video file
     Return:
         Synthetic LC, dict {'time': time, 'mst': mag, 'mr': mr, 'mz': mz, 'el': el, 'range': dist}
     """
@@ -33,7 +55,7 @@ def model(var_params, conf_res, delete_tmp=True):
     # var_params = (var['value'] for var in conf_res['var_params_list'])
     # print("problem....")
     video_file = make_blender_script(tmp_script_path=tmp_script_path + rnd_gen,
-                                     conf_res=conf_res, var_list=var_params  # conf_res['var_params_list']
+                                     conf_res=conf_res, var_list=var_params , sub_name=sub_name # conf_res['var_params_list']
                                      )
 
     if video_file is False:
@@ -154,10 +176,11 @@ def run_mcmc_pool(p0, nwalkers, niter, ndim, lnprob, ncpus=cpu_count()):
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob,
                                         pool=pool,
                                         backend=backend,
-                                        moves=[
-                                            (emcee.moves.DEMove(), 0.8),
-                                            (DIMEMove(), 0.2)
-                                        ]
+                                        # moves=[
+                                        #     (emcee.moves.DEMove(), 0.8),
+                                        #     (DIMEMove(), 0.2)
+                                        # ]
+                                        moves=DIMEMove()
                                         )
 
         print("Running burn-in...")
@@ -172,11 +195,22 @@ def run_mcmc_pool(p0, nwalkers, niter, ndim, lnprob, ncpus=cpu_count()):
 
 
 if __name__ == "__main__":
-    load_dotenv('.env')
+    load_dotenv('.env', override=True)
     parser = argparse.ArgumentParser(description='LC simulation with MCMC method and Blender software')
     parser.add_argument('-c', '--config', help='Specify config file', required=False)
     parser.add_argument('-l', '--observed_lc', help="Path to observed LC", required=True)
     args = vars(parser.parse_args())
+
+    # Примусово видаляємо змінну, яка змушує Blender шукати gvfs
+    os.environ.pop("XDG_RUNTIME_DIR", None)
+
+    # Перевіряємо, чи це Python 3.14 або новіший
+    if sys.version_info >= (3, 14):
+        # Патч потрібен для поточних версій Matplotlib (наприклад, 3.8, 3.9, 3.10)
+        # Щойно вийде офіційне оновлення (наприклад, 3.11.0), патч автоматично вимкнеться
+        if version.parse(matplotlib.__version__) < version.parse("3.11.0"):
+            # Підміняємо оригінальний метод нашим виправленим
+            matplotlib.path.Path.__deepcopy__ = fixed_path_deepcopy
 
     if args["config"]:
         config_name = args["config"]
@@ -223,27 +257,100 @@ if __name__ == "__main__":
     f.write("   " + "    ".join(labels) + "    resid\n")
     f.close()
 
+    # start_time = time.time()
+    #
+    # sampler, pos, prob, state = run_mcmc_pool(p0, nwalkers, niter, ndim, lnprob, ncpus=conf_res['ncpu'])
+    # samples = sampler.flatchain
+    #
+    # out_filename = os.path.join(conf_res['temp_dir_name'], "out_res.txt")
+    # f_out = open(out_filename, "w")
+    #
+    # print("Fitted parameters:")
+    # f_out.write("Fitted parameters:\n")
+    # print(samples[np.argmax(sampler.flatlnprobability)])
+    # f_out.write(str(samples[np.argmax(sampler.flatlnprobability)]))
+    #
+    # duration = timedelta(seconds=int(time.time() - start_time))
+    # f_out.write(f"--- Exec Time: {duration} (Days, HH:MM:SS) ---")
+    # print(f"--- Exec Time: {duration} (Days, HH:MM:SS) ---")
+    #
+    #
+    # # Plot best result
+    # theta_max = samples[np.argmax(sampler.flatlnprobability)]
+    # best_synth_lc = model(theta_max, conf_res, delete_tmp=False)
+    #
+    # m_diff = model_diff(best_synth_lc['time'], best_synth_lc['mst'], lc_time, lc_mag, norm_mag=True, save_plot=True,
+    #                     plot_title=theta_max, conf_res=conf_res, norm_range=(0, 1))
+    #
+    # # Posterior Spread or Cornerplot
+    # # labels = ['P', 'p_phase', 'P_pr', 'pr_phase', 'pr_angle']
+    # fig = corner.corner(samples, show_titles=True, labels=labels, plot_datapoints=True, quantiles=[0.16, 0.5, 0.84])
+    # fig.tight_layout()
+    # plt.savefig(os.path.join(conf_res['temp_dir_name'], "corner_plot.svg"))
+
     start_time = time.time()
-
+    # Запуск MCMC пулу
     sampler, pos, prob, state = run_mcmc_pool(p0, nwalkers, niter, ndim, lnprob, ncpus=conf_res['ncpu'])
-    samples = sampler.flatchain
-    print("Fitted parameters:")
-    print(samples[np.argmax(sampler.flatlnprobability)])
 
-    t_hour = (time.time() - start_time) / 3600.0
+    # Синхронізація через get_chain з урахуванням вигорання
+    burn_in = int(conf_res['niter_burn'])
+    samples = sampler.get_chain(discard=burn_in, flat=True)
+    log_probabilities = sampler.get_log_prob(discard=burn_in, flat=True)
 
-    # print(f"--- {(time.time() - start_time) / 60.0} minutes ---")
-    print(f"---  %2dh %2dm  ---" % (t_hour, (t_hour % 1 * 60)))
+    # 1. Розрахунок ТОЧКИ МАКСИМУМУ ЙМОВІРНОСТІ (Log Probability Max)
+    best_index = np.argmax(log_probabilities)
+    theta_max_prob = samples[best_index]
 
-    # Plot best result
-    theta_max = samples[np.argmax(sampler.flatlnprobability)]
-    best_synth_lc = model(theta_max, conf_res, delete_tmp=False)
+    # 2. Розрахунок ТОЧКИ МЕДІАНИ (Центр розподілу Cornerplot)
+    theta_median = np.median(samples, axis=0)
 
-    m_diff = model_diff(best_synth_lc['time'], best_synth_lc['mst'], lc_time, lc_mag, norm_mag=True, save_plot=True,
-                        plot_title=theta_max, conf_res=conf_res, norm_range=(0, 1))
+    # Запис ОБВОХ результатів у файл out_res.txt
+    out_filename = os.path.join(conf_res['temp_dir_name'], "out_res.txt")
+    with open(out_filename, "w") as f_out:
+        print("\n--- ОБЧИСЛЕНІ ПАРАМЕТРИ ---")
+        print(f"Maximum Likelihood (Log_prob max): {theta_max_prob}")
+        print(f"Median (Cornerplot center): {theta_median}")
 
-    # Posterior Spread or Cornerplot
-    # labels = ['P', 'p_phase', 'P_pr', 'pr_phase', 'pr_angle']
+        f_out.write("--- MCMC Results ---\n")
+        f_out.write(f"Maximum Likelihood Parameters (Max Log_prob): {theta_max_prob}\n")
+        f_out.write(f"Median Parameters (Cornerplot): {theta_median}\n")
+
+        duration = timedelta(seconds=int(time.time() - start_time))
+        f_out.write(f"--- Exec Time: {duration} (Days, HH:MM:SS) ---\n")
+        print(f"--- Exec Time: {duration} (Days, HH:MM:SS) ---")
+
+    # =========================================================================
+    # ГЕНЕРАЦІЯ МОДЕЛІ ТА ГРАФІКА ДЛЯ МАКСИМУМУ ЙМОВІРНОСТІ
+    # =========================================================================
+    print("\nGenerating LC and residuals for: MAXIMUM LIKELIHOOD...")
+
+    # Тимчасово підміняємо ім'я директорії або префікс у функції, якщо model_diff це підтримує.
+    # Якщо ваша функція model_diff жорстко зберігає у фіксоване ім'я,
+    # ми адаптуємо назви через conf_res (якщо ваш скрипт це враховує).
+    best_synth_lc_max = model(theta_max_prob, conf_res, delete_tmp=False, sub_name="max")
+
+    # Створюємо графік залишків для Максимуму (зберігаємо з поміткою "max")
+    # ПРИМІТКА: Переконайтеся, що ваша функція model_diff вміє додавати назву до файлу,
+    # або змініть логіку збереження всередині неї, базуючись на plot_title.
+    m_diff_max = model_diff(best_synth_lc_max['time'], best_synth_lc_max['mst'], lc_time, lc_mag,
+                            norm_mag=True, save_plot=True, plot_title=f"Max_LogProb_{theta_max_prob}",
+                            conf_res=conf_res, sub_name="max", norm_range=(0, 1))
+
+    # =========================================================================
+    # ГЕНЕРАЦІЯ МОДЕЛІ ТА ГРАФІКА ДЛЯ МЕДІАНИ
+    # =========================================================================
+    print("\nGenerating LC and residuals for: MEDIAN...")
+    best_synth_lc_median = model(theta_median, conf_res, delete_tmp=False, sub_name="median")
+
+    # Створюємо графік залишків для Медіани (зберігаємо з поміткою "median")
+    m_diff_median = model_diff(best_synth_lc_median['time'], best_synth_lc_median['mst'], lc_time, lc_mag,
+                               norm_mag=True, save_plot=True, plot_title=f"Median_{theta_median}",
+                               conf_res=conf_res, sub_name="median", norm_range=(0, 1))
+
+    # =========================================================================
+    # ПОБУДОВА CORNERPLOT
+    # =========================================================================
     fig = corner.corner(samples, show_titles=True, labels=labels, plot_datapoints=True, quantiles=[0.16, 0.5, 0.84])
     fig.tight_layout()
     plt.savefig(os.path.join(conf_res['temp_dir_name'], "corner_plot.svg"))
+    print("\nУсі графіки та відео успішно згенеровано!")
