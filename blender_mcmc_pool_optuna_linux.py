@@ -7,6 +7,7 @@ import platform
 import os
 import sys
 from datetime import timedelta
+import copy
 
 # Disable HDF5 file locking to avoid conflicts during parallel writes
 os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
