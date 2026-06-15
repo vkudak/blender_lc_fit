@@ -239,7 +239,7 @@ if __name__ == "__main__":
     ga_start_time = time.time()
     
     # Run 100 evaluation trials distributed natively over specified local CPU threads
-    study.optimize(optuna_objective, n_trials=100, n_jobs=conf_res['ncpu'], show_progress_bar=True)
+    study.optimize(optuna_objective, n_trials=conf_res['optuna_iter'], n_jobs=conf_res['ncpu'], show_progress_bar=True)
     
     optuna_duration = timedelta(seconds=int(time.time() - ga_start_time))
     print(f"--- Optuna optimization finished in: {optuna_duration} ---")
@@ -250,23 +250,41 @@ if __name__ == "__main__":
     print(f"Optimized initial seed parameters: {best_optuna_solution}")
 
     # =========================================================================
-    # STAGE 2: PREPARING ENSEMBLE INITIAL STATES (p0) FROM OPTUNA RESULTS
+    # STAGE 2: PREPARING ENSEMBLE INITIAL STATES (p0) FROM BEST OPTUNA TRIALS
     # =========================================================================
     nwalkers = conf_res['nwalkers']
     niter = conf_res['niter']
 
-    print(f"\nGenerating {nwalkers} MCMC walkers centered tightly around Optuna's solution...")
-    
-    # Create a small hyper-dimensional cloud (spread within ~2% of bounding box) around the best solution
+    print(f"\nExtracting the top {nwalkers} best distinct trials from Optuna history for MCMC initialization...")
+
+    # 1. Get all finished trials from the study history
+    completed_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+
+    # 2. Sort trials by their objective value (ascending order, since we minimize Chi2)
+    completed_trials.sort(key=lambda t: t.value)
+
     p0 = []
+
+    # We need to fill exactly nwalkers positions
     for i in range(nwalkers):
+        # If we have fewer completed trials than nwalkers, cycle back to the best ones
+        trial_idx = i % len(completed_trials)
+        current_trial = completed_trials[trial_idx]
+
         walker_pos = []
         for idx, var in enumerate(conf_res['var_params_list']):
-            spread = (var['max_val'] - var['min_val']) * 0.02
+            # Get the parameter value from this specific historical trial
+            best_val_for_param = current_trial.params[var['name']]
+
+            # Add a flexible scaling factor or light spread (e.g., 3-5%) so they are not completely identical
+            # if we are cycling through the same top trials
+            spread = (var['max_val'] - var['min_val']) * conf_res['spread']
             random_offset = np.random.uniform(-spread, spread)
-            val = best_optuna_solution[idx] + random_offset
+
+            val = best_val_for_param + random_offset
             val = np.clip(val, var['min_val'], var['max_val'])
             walker_pos.append(val)
+
         p0.append(np.array(walker_pos))
 
     np.savetxt(os.path.join(conf_res['temp_dir_name'], "p0.txt"), p0, fmt='%10.2f', header="    ".join(labels))

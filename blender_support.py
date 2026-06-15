@@ -46,6 +46,9 @@ def read_config(conf_file):
             nwalkers = config.getint('mcmc_params', 'nwalkers')
             save_mcmc_file = config.get('mcmc_params', 'save_mcmc_file', fallback=None)
             rewrite_h5 = config.getboolean('mcmc_params', "rewrite_h5", fallback=True)
+            spread = config.getint('mcmc_params', 'spread', fallback=5)
+
+            optuna_iter = config.getint('optuna', 'n_iter', fallback=300)
 
             sat_name = config.get('satellite', 'name')
             sat_cospar = config.get('satellite', 'cospar')
@@ -79,6 +82,9 @@ def read_config(conf_file):
                     'niter_burn': niter_burn,
                     'save_mcmc_file': save_mcmc_file,
                     'rewrite_h5': rewrite_h5,
+                    'spread': spread/100,
+
+                    'optuna_iter': optuna_iter,
 
                     'sat_name': sat_name,
                     'sat_cospar': sat_cospar,
