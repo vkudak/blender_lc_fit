@@ -48,7 +48,7 @@ def read_config(conf_file):
             rewrite_h5 = config.getboolean('mcmc_params', "rewrite_h5", fallback=True)
             spread = config.getint('mcmc_params', 'spread', fallback=5)
 
-            optuna_iter = config.getint('optuna', 'n_iter', fallback=300)
+            optuna_iter = config.getint('optuna', 'niter', fallback=300)
 
             sat_name = config.get('satellite', 'name')
             sat_cospar = config.get('satellite', 'cospar')
